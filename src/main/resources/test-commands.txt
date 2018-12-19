@@ -1,0 +1,10 @@
+flow start TokenIssueFlow owner: PartyB, amount: 99
+
+flow start TokenTransferFlow newOwner: PartyC, id: <id>
+
+
+
+show all transactions
+------------------------------
+
+run vaultQuery contractStateType: ch.insurance.cordapp.TokenState

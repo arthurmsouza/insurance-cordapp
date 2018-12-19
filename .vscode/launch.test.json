@@ -1,0 +1,30 @@
+{
+    "run": {
+        "default": "",
+        "items": [
+            {
+                "name": "insurance-cordapp",
+                "projectName": "insurance-cordapp",
+                "workingDirectory": "/Users/Lolo/git/insurance-cordapp",
+                "args": [],
+                "vmargs": [],
+                "env": {},
+                "preLaunchTask": ""
+            }
+        ]
+    },
+    "debug": {
+        "default": "",
+        "items": [
+            {
+                "name": "insurance-cordapp",
+                "projectName": "insurance-cordapp",
+                "workingDirectory": "/Users/Lolo/git/insurance-cordapp",
+                "args": [],
+                "vmargs": [],
+                "env": {},
+                "preLaunchTask": ""
+            }
+        ]
+    }
+}
