@@ -21,7 +21,7 @@ public class TokenTransfer {
      * See src/main/java/examples/ArtTransferFlowInitiator.java for an example. */
     @InitiatingFlow
     @StartableByRPC
-    public static class TokenTransferFlow extends TokenBaseFlow {
+    public static class TokenTransferFlow extends BaseFlow<TokenState> {
         private final Party newOwner;
         private final UniqueIdentifier id;
 
@@ -47,7 +47,8 @@ public class TokenTransfer {
              *                - create new TokenState based on Input, update owner and set same amount
              * ===========================================================================*/
             // We create our new TokenState.
-            StateAndRef<TokenState> tokenInputStateToTransfer =  this.getStateByLinearId(this.id);
+            StateAndRef<TokenState> tokenInputStateToTransfer =  this.getStateByLinearId(
+                    TokenState.class, this.id);
             TokenState tokenInputState = this.getStateByRef(tokenInputStateToTransfer);
             final Party oldIssuer = tokenInputState.getIssuer();
             final Party oldOwner = tokenInputState.getOwner();
@@ -134,7 +135,7 @@ public class TokenTransfer {
         @Override
         public SignedTransaction call() throws FlowException {
             subFlow(new IdentitySyncFlow.Receive(otherFlow));
-            SignedTransaction stx = subFlow(new TokenBaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
+            SignedTransaction stx = subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
             return waitForLedgerCommit(stx.getId());
         }
     }

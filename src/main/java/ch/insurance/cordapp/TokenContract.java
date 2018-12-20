@@ -1,6 +1,8 @@
 package ch.insurance.cordapp;
 
-import net.corda.core.contracts.*;
+import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.Command;
+import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;
 import net.corda.finance.contracts.asset.Cash;
 import net.corda.finance.utils.StateSumming;
@@ -15,7 +17,7 @@ import static net.corda.core.contracts.Structures.withoutIssuer;
 
 /* Our contract, governing how our state will evolve over time.
  * See src/main/java/examples/ArtContract.java for an example. */
-public class TokenContract implements Contract {
+public class TokenContract extends BaseContract {
     public static String ID = "ch.insurance.cordapp.TokenContract";
 
     public interface Commands extends CommandData {
@@ -42,65 +44,51 @@ public class TokenContract implements Contract {
 	}
 
     private void verifyIssue(LedgerTransaction tx, Command<Commands> command) {
-        List<ContractState> inputStates = tx.getInputStates();
-        List<TransactionState<ContractState>> outputs = tx.getOutputs();
-
-        List<TokenState> tokenStates = tx.outputsOfType(TokenState.class);
-        if (inputStates.size() != 0) throw new IllegalArgumentException("Must be no input.");
-        if (outputs.size() != 1) throw new IllegalArgumentException("Must be one output.");
-        if (tokenStates.size() != 1) throw new IllegalArgumentException("output should be an TokenState.");
-        if ((tx.outputsOfType(TokenState.class).get(0).getAmount().getQuantity() == 0)) throw new IllegalArgumentException("output state needed");
-        if (tokenStates.get(0).getIssuer().equals(tokenStates.get(0).getOwner()))
-            throw new IllegalArgumentException("issuer and owner cannot be the same");
-
-        // Grabbing the transaction's contents.
-        final List<PublicKey> requiredSigners = command.getSigners();
-        if (!requiredSigners.contains(tokenStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException();
-        }
+        TokenState tokenState = this.oneOutput(tx, TokenState.class);
+        this.requireIssueCounts(tx, 1, TokenState.class);
+        this.requireAmountNone0(tokenState.getAmount());
+        requireThat(req -> {
+            req.using("issuer and owner must be different parties.",
+                    !tokenState.getIssuer().equals(tokenState.getOwner()));
+            final List<PublicKey> requiredSigners = command.getSigners();
+            req.using("issuer must be a signer.",
+                    requiredSigners.contains(tokenState.getIssuer().getOwningKey()));
+            return null;
+        });
     }
+
     private void verifyTransfer(LedgerTransaction tx, Command<Commands> command) {
-        List<ContractState> inputStates = tx.getInputStates();
-        List<TransactionState<ContractState>> outputs = tx.getOutputs();
-
-        List<TokenState> tokenInputStates = tx.inputsOfType(TokenState.class);
-        List<TokenState> tokenOutputStates = tx.outputsOfType(TokenState.class);
-        if (inputStates.size() != 1) throw new IllegalArgumentException("Must be one input with id.");
-        if (outputs.size() != 1) throw new IllegalArgumentException("Must be one output.");
-        if (tokenInputStates.size() != 1) throw new IllegalArgumentException("input should be an TokenState.");
-        if (tokenOutputStates.size() != 1) throw new IllegalArgumentException("output should be an TokenState.");
-        if (tokenOutputStates.get(0).getIssuer().equals(tokenOutputStates.get(0).getOwner()))
-            throw new IllegalArgumentException("issuer and owner cannot be the same");
-        //validate old owner is new issuer
-        if (!tokenOutputStates.get(0).getIssuer().equals(tokenInputStates.get(0).getOwner()))
-            throw new IllegalArgumentException("Only current owner can transfer it to new owner");
-
-        // Grabbing the transaction's contents.
-        final List<PublicKey> requiredSigners = command.getSigners();
-        if (!requiredSigners.contains(tokenOutputStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException("new owner needs to sign");
-        }
-        //assumption: old issuer must sign transfer to new owner
-        if (!requiredSigners.contains(tokenInputStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException("old issuer must sign transfer to new owner");
-        }
+        TokenState tokenInputState = oneInput(tx, TokenState.class);
+        TokenState tokenOutputState = oneOutput(tx, TokenState.class);
+        this.requireUpdateCounts(tx, 1, TokenState.class);
+        TokenState input = oneInput(tx, TokenState.class);
+        TokenState output = oneInput(tx, TokenState.class);
+        requireThat(req -> {
+            final List<PublicKey> requiredSigners = command.getSigners();
+            req.using("issuer and owner needs to be different parties",
+                    !input.getIssuer().equals(output.getOwner()));
+            req.using("Only current owner can transfer it to new owner",
+                    output.getIssuer().equals(input.getOwner()));
+            req.using("new owner needs to sign",
+                    requiredSigners.contains(output.getIssuer().getOwningKey()));
+            req.using("old issuer must sign transfer to new owner",
+                    !requiredSigners.contains(input.getIssuer().getOwningKey()));
+            return null;
+        });
     }
     private void verifySettle(LedgerTransaction tx, Command<Commands> command) {
         requireThat(req -> {
             // Grabbing the transaction's contents.
             final List<PublicKey> requiredSigners = command.getSigners();
+            this.requireTransferCounts(tx, 1, TokenState.class, 1, Cash.State.class);
 
-            // Check for the presence of an input token state.
-            List<TokenState> tokenInputStates = tx.inputsOfType(TokenState.class);
-            req.using("There must be one input token state.", tokenInputStates.size() == 1);
+            TokenState tokenInputState = oneInput(tx, TokenState.class);
 
             // Check there are output cash states.
             // We don't care about cash inputs, the Cash contract handles those.
             List<Cash.State> cash = tx.outputsOfType(Cash.State.class);
             req.using("There must be output cash.", !cash.isEmpty());
 
-            // Check that the cash is being assigned to us.
-            TokenState tokenInputState = tokenInputStates.get(0);
             List<Cash.State> acceptableCash = cash.stream().filter(
                         it -> it.getOwner().equals(tokenInputState.getIssuer())).collect(Collectors.toList());
             req.using("There must be output cash paid to the recipient.", !acceptableCash.isEmpty());

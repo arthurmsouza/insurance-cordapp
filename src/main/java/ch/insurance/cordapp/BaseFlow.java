@@ -3,6 +3,7 @@ package ch.insurance.cordapp;
 import com.google.common.collect.ImmutableList;
 import net.corda.confidential.IdentitySyncFlow;
 import net.corda.core.contracts.CommandData;
+import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
@@ -17,8 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import java.security.PublicKey;
 import java.util.List;
 
-public abstract class TokenBaseFlow extends FlowLogic<SignedTransaction> {
-    public TokenBaseFlow() {
+public abstract class BaseFlow<T extends ContractState> extends FlowLogic<SignedTransaction> {
+    public BaseFlow() {
         super();
     }
 
@@ -45,26 +46,25 @@ public abstract class TokenBaseFlow extends FlowLogic<SignedTransaction> {
     }
 
 
-
-    protected StateAndRef<TokenState> getStateByLinearId(UniqueIdentifier linearId) throws FlowException {
+    protected StateAndRef<T> getStateByLinearId(Class stateClass, UniqueIdentifier linearId) throws FlowException {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
                 null,
                 ImmutableList.of(linearId),
                 Vault.StateStatus.UNCONSUMED,
                 null);
 
-        List<StateAndRef<TokenState>> tokens = getServiceHub().getVaultService().queryBy(
-                TokenState.class, queryCriteria).getStates();
-        if (tokens.size() != 1) {
-            throw new FlowException(String.format("TokenState with id %s not found.", linearId));
+        List<StateAndRef<T>> data = getServiceHub().getVaultService().queryBy(
+                stateClass, queryCriteria).getStates();
+        if (data.size() != 1) {
+            throw new FlowException(String.format("State of class '%s' with id %s not found.", stateClass.getName(), linearId));
         }
-        return tokens.get(0);
+        return data.get(0);
     }
-    protected TokenState getStateByRef(StateAndRef<TokenState> ref){
+    protected T getStateByRef(StateAndRef<T> ref){
         return ref.getState().getData();
     }
 
-    protected final ProgressTracker.Step PREPARATION = new ProgressTracker.Step("Obtaining Obligation from vault.");
+    protected final ProgressTracker.Step PREPARATION = new ProgressTracker.Step("Obtaining data from vault.");
     protected final ProgressTracker.Step BUILDING = new ProgressTracker.Step("Building and verifying transaction.");
     protected final ProgressTracker.Step SIGNING = new ProgressTracker.Step("Signing transaction.");
     protected final ProgressTracker.Step SYNCING = new ProgressTracker.Step("Syncing identities.") {

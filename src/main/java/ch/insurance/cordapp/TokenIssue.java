@@ -1,9 +1,7 @@
 package ch.insurance.cordapp;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.CommandData;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.InitiatingFlow;
@@ -12,9 +10,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import org.jetbrains.annotations.NotNull;
 
-import java.security.PublicKey;
 import java.util.Currency;
 
 
@@ -24,7 +20,7 @@ public class TokenIssue {
      * See src/main/java/examples/ArtTransferFlowInitiator.java for an example. */
     @InitiatingFlow
     @StartableByRPC
-    public static class TokenIssueFlow extends TokenBaseFlow {
+    public static class TokenIssueFlow extends BaseFlow<TokenState> {
         private final Party owner;
         private final Amount<Currency> amount;
 
