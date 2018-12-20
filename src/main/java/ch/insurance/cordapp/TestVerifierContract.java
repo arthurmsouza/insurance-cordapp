@@ -1,21 +1,11 @@
 package ch.insurance.cordapp;
 
-import ch.insurance.cordapp.BaseContract;
-import ch.insurance.cordapp.TokenState;
-import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;
-import net.corda.finance.contracts.asset.Cash;
-import net.corda.finance.utils.StateSumming;
+import sun.tools.jstat.Token;
 
-import java.security.PublicKey;
-import java.util.Currency;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static net.corda.core.contracts.ContractsDSL.requireThat;
-import static net.corda.core.contracts.Structures.withoutIssuer;
 
 /* Our contract, governing how our state will evolve over time.
  * See src/main/java/examples/ArtContract.java for an example. */
@@ -24,8 +14,9 @@ public class TestVerifierContract extends BaseContract {
 
     public interface Commands extends CommandData {
         class TestIssueNormal implements Commands { }
-        class Test2 implements Commands { }
-        class Test3 implements Commands { }
+        class TestIssueMoreThanOne implements Commands { }
+        class TestTransfer_1_1 implements Commands { }
+        class TestTransfer_2_1 implements Commands { }
         class Test4 implements Commands { }
         class Test5 implements Commands { }
     }
@@ -38,17 +29,26 @@ public class TestVerifierContract extends BaseContract {
         Command<Commands> command = commands.get(0);
         Commands commandData = commands.get(0).getValue();
 
-        ContractStateVerifier verifier = new ContractStateVerifier(tx);
+        StateVerifier verifier = new StateVerifier(tx);
 
         if (commandData instanceof Commands.TestIssueNormal) {
-            verifier.input().empty();
-            verifier.output().one();
+            verifier.input().empty().verifyAll();
+            verifier.output().one().one(TokenState.class).verifyAll();
 
-        } else if (commandData instanceof Commands.Test2) {
+        } else if (commandData instanceof Commands.TestIssueMoreThanOne) {
+            verifier.input().empty().verifyAll();
+            verifier.output().moreThanOne().verifyAll();
 
-        } else if (commandData instanceof Commands.Test3) {
+        } else if (commandData instanceof Commands.TestTransfer_1_1) {
+            verifier.input().notEmpty().verifyAll();
+            verifier.input().one().moreThanZero().verifyAll();
+            verifier.output().one().moreThanZero().verifyAll();
 
-        } else if (commandData instanceof Commands.Test4) {
+        } else if (commandData instanceof Commands.TestTransfer_2_1) {
+            verifier.input().notEmpty().verifyAll();
+            verifier.output().notEmpty().verifyAll();
+            verifier.input(TokenState.class).moreThanZero().moreThanZero(2).moreThanOne(2).verifyAll();
+            verifier.output(TokenState.class).one().moreThanZero().moreThanZero(1).verifyAll();
 
         } else if (commandData instanceof Commands.Test5) {
 

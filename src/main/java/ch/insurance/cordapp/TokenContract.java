@@ -32,7 +32,7 @@ public class TokenContract extends BaseContract {
         if (commands.size() != 1) throw new IllegalArgumentException();
 
         Command<Commands> command = commands.get(0);
-        Commands commandData = commands.get(0).getValue();
+        CommandData commandData = command.getValue();
 
         if (commandData instanceof Commands.Issue) {
             verifyIssue(tx, command);
@@ -44,8 +44,14 @@ public class TokenContract extends BaseContract {
 	}
 
     private void verifyIssue(LedgerTransaction tx, Command<Commands> command) {
+        StateVerifier verifier = new StateVerifier(tx, Commands.class);
+        requireThat(req -> {
+            verifier.input().empty().verifyAll();
+            verifier.output().one().one(TokenState.class).verifyAll();
+            return null;
+        });
+
         TokenState tokenState = this.oneOutput(tx, TokenState.class);
-        this.requireIssueCounts(tx, 1, TokenState.class);
         this.requireAmountNone0(tokenState.getAmount());
         requireThat(req -> {
             req.using("issuer and owner must be different parties.",
