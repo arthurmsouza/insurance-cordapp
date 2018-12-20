@@ -86,7 +86,7 @@ task deployNodesJava(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=PartyA,L=London,C=GB"
         p2pPort 10003
-        webPort 10013
+        webPort 9003
         rpcSettings {
             address("localhost:10004")
             adminAddress("localhost:10005")
@@ -99,7 +99,7 @@ task deployNodesJava(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=PartyB,L=New York,C=US"
         p2pPort 10006
-        webPort 10016
+        webPort 9006
         rpcSettings {
             address("localhost:10007")
             adminAddress("localhost:10008")
@@ -112,7 +112,7 @@ task deployNodesJava(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=PartyC,L=Lagos,C=NG"
         p2pPort 10009
-        webPort 10019
+        webPort 9009
         rpcSettings {
             address("localhost:10010")
             adminAddress("localhost:10011")

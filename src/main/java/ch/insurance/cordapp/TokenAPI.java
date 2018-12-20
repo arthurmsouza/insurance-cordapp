@@ -2,6 +2,7 @@ package ch.insurance.cordapp;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
@@ -19,6 +20,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Field;
+import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +29,7 @@ import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.Response.Status.*;
 
 // This API is accessible from /api/example. All paths specified below are relative to it.
-@Path("example")
+@Path("token/v1")
 public class TokenAPI {
     private final CordaRPCOps rpcOps;
     private final CordaX500Name myLegalName;
@@ -71,9 +73,9 @@ public class TokenAPI {
      * Displays all IOU states that exist in the node's vault.
      */
     @GET
-    @Path("ious")
+    @Path("tokens")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<StateAndRef<TokenState>> getIOUs() {
+    public List<StateAndRef<TokenState>> getTokens() {
         return rpcOps.vaultQuery(TokenState.class).getStates();
     }
 
@@ -89,13 +91,15 @@ public class TokenAPI {
      * The flow is invoked asynchronously. It returns a future when the flow's call() method returns.
      */
     @PUT
-    @Path("create-iou")
-    public Response createIOU(@QueryParam("iouValue") int iouValue, @QueryParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
-        if (iouValue <= 0) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'iouValue' must be non-negative.\n").build();
+    @Path("tokens")
+    public Response createToken(@FormParam("amount") String amount, @FormParam("partyName") CordaX500Name partyName) throws InterruptedException, ExecutionException {
+        try {
+            Amount.parseCurrency(amount);
+        } catch (Throwable ex) {
+            return Response.status(BAD_REQUEST).entity("Form parameter 'amount' is not valid form '000.00 <currency>' e.g. '100 CHF'.\n").build();
         }
         if (partyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build();
+            return Response.status(BAD_REQUEST).entity("Form parameter 'partyName' missing or has wrong format.\n").build();
         }
 
         final Party otherParty = rpcOps.wellKnownPartyFromX500Name(partyName);
@@ -105,7 +109,7 @@ public class TokenAPI {
 
         try {
             final SignedTransaction signedTx = rpcOps
-                    .startTrackedFlowDynamic(TokenIssue.TokenIssueFlow.class, iouValue, otherParty)
+                    .startTrackedFlowDynamic(TokenIssue.TokenIssueFlow.class, otherParty, Amount.parseCurrency(amount))
                     .getReturnValue()
                     .get();
 
@@ -120,11 +124,11 @@ public class TokenAPI {
     }
 
     /**
-     * Displays all IOU states that are created by Party.
+     * Displays all tokens states that are created by Party.
      */
     /*
     @GET
-    @Path("my-ious")
+    @Path("tokens/mine")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getMyIOUs() throws NoSuchFieldException {
         QueryCriteria generalCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
