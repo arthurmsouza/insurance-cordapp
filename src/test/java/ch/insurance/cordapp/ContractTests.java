@@ -4,16 +4,12 @@ import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.Contract;
 import net.corda.core.identity.CordaX500Name;
-import net.corda.core.node.NetworkParameters;
 import net.corda.testing.contracts.DummyState;
 import net.corda.testing.core.DummyCommandData;
 import net.corda.testing.core.TestIdentity;
-import net.corda.testing.node.MockNetworkParameters;
 import net.corda.testing.node.MockServices;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 import static net.corda.testing.node.NodeTestUtils.transaction;
 

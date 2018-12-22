@@ -3,7 +3,6 @@ package ch.insurance.cordapp;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;
-import sun.tools.jstat.Token;
 
 import java.util.List;
 
@@ -29,29 +28,31 @@ public class TestVerifierContract extends BaseContract {
         Command<Commands> command = commands.get(0);
         Commands commandData = commands.get(0).getValue();
 
-        StateVerifier verifier = new StateVerifier(tx);
+        StateVerifier verifier = new StateVerifier(tx, Commands.class);
 
         if (commandData instanceof Commands.TestIssueNormal) {
-            verifier.input().empty().verifyAll();
-            verifier.output().one().one(TokenState.class).verifyAll();
+            verifier.input().empty();
+            verifier.output().one().one(TokenState.class).signer("issuer", x -> ((TokenState)x).getIssuer());
 
         } else if (commandData instanceof Commands.TestIssueMoreThanOne) {
-            verifier.input().empty().verifyAll();
-            verifier.output().moreThanOne().verifyAll();
+            verifier.input().empty();
+            verifier.output().moreThanOne().signer("issuer", x -> ((TokenState)x).getIssuer());
 
         } else if (commandData instanceof Commands.TestTransfer_1_1) {
-            verifier.input().notEmpty().verifyAll();
-            verifier.input().one().moreThanZero().verifyAll();
-            verifier.output().one().moreThanZero().verifyAll();
+            verifier.input().notEmpty().one().moreThanZero();
+            verifier.output().notEmpty().one().moreThanZero();
+            verifier.output(TokenState.class).one()
+                    .signer("issuer", x -> ((TokenState)x).getIssuer())
+                    .differentParty(
+                            "issuer", x -> ((TokenState)x).getIssuer(),
+                            "owner", x -> ((TokenState)x).getOwner()
+                    );
 
         } else if (commandData instanceof Commands.TestTransfer_2_1) {
-            verifier.input().notEmpty().verifyAll();
-            verifier.output().notEmpty().verifyAll();
-            verifier.input(TokenState.class).moreThanZero().moreThanZero(2).moreThanOne(2).verifyAll();
-            verifier.output(TokenState.class).one().moreThanZero().moreThanZero(1).verifyAll();
-
-        } else if (commandData instanceof Commands.Test5) {
-
+            verifier.input().notEmpty().input(TokenState.class).count(2).max(2).min(2);
+            verifier.output().notEmpty().output(TokenState.class).one().min(1).max(1).count(1);
+            verifier.input(TokenState.class).moreThanZero().moreThanZero(2).moreThanOne(2);
+            verifier.output(TokenState.class).one().moreThanZero().moreThanZero(1);
         }
 	}
 

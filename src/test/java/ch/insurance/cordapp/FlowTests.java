@@ -2,7 +2,10 @@ package ch.insurance.cordapp;
 
 import com.google.common.collect.ImmutableList;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.*;
+import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.Command;
+import net.corda.core.contracts.TransactionState;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.testing.node.MockNetwork;
@@ -119,6 +122,7 @@ public class FlowTests {
     @Test
     public void transactionTransferredByFlow() throws Exception {
         // create tokenstate to get new ID
+        // old: A --> B
         Party oldOwner = nodeB.getInfo().getLegalIdentities().get(0);
         TokenIssue.TokenIssueFlow flow = new TokenIssue.TokenIssueFlow(oldOwner, amount99CHF);
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
@@ -129,6 +133,7 @@ public class FlowTests {
         // get ID to transfer to nodeC
         UniqueIdentifier linearId = output.getLinearId();
 
+        // new: B --> C
         Party newOwner = nodeC.getInfo().getLegalIdentities().get(0);
         TokenTransfer.TokenTransferFlow transferFlow = new TokenTransfer.TokenTransferFlow(newOwner, linearId);
         CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(transferFlow);
@@ -140,5 +145,32 @@ public class FlowTests {
         assertEquals(oldOwner, transferOutput.getIssuer());
 
     }
+
+    @Test
+    public void transactionSettlingByFlow() throws Exception {
+        // create tokenstate to get new ID
+        // current: A --> B
+        Party owner = nodeB.getInfo().getLegalIdentities().get(0);
+        TokenIssue.TokenIssueFlow flow = new TokenIssue.TokenIssueFlow(owner, amount99CHF);
+        CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
+        network.runNetwork();
+        SignedTransaction signedTransaction = future.get();
+        TokenState output = signedTransaction.getTx().outputsOfType(TokenState.class).get(0);
+
+        // get ID to transfer to nodeC
+        UniqueIdentifier linearId = output.getLinearId();
+
+        TokenTransfer.TokenTransferFlow transferFlow = new TokenTransfer.TokenTransferFlow(newOwner, linearId);
+        CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(transferFlow);
+        network.runNetwork();
+        SignedTransaction signedTransferTransaction = futureTransfer.get();
+        TokenState transferOutput = signedTransferTransaction.getTx().outputsOfType(TokenState.class).get(0);
+
+        assertEquals(newOwner, transferOutput.getOwner());
+        assertEquals(owner, transferOutput.getIssuer());
+
+    }
+
+
 
 }

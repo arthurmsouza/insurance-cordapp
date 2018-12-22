@@ -2,14 +2,8 @@ package ch.insurance.cordapp;
 
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.Contract;
 import net.corda.core.identity.CordaX500Name;
-import net.corda.core.transactions.LedgerTransaction;
-import net.corda.testing.contracts.DummyState;
-import net.corda.testing.core.DummyCommandData;
 import net.corda.testing.core.TestIdentity;
-import net.corda.testing.dsl.TransactionDSL;
-import net.corda.testing.dsl.TransactionDSLInterpreter;
 import net.corda.testing.node.MockServices;
 import org.junit.Before;
 import org.junit.Test;
@@ -149,6 +143,59 @@ public class ContractVerifierTests {
             tx.input(TestVerifierContract.ID, tokenState);
             tx.output(TestVerifierContract.ID, tokenState);
             tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_1_1());
+            tx.verifies();
+            return null;
+        });
+    }
+
+    @Test
+    public void tokenTransfer_2_1() {
+        transaction(ledgerServices, tx -> {
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
+            tx.fails();
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.input(TestVerifierContract.ID, tokenState);
+            tx.output(TestVerifierContract.ID, tokenState);
+            tx.command(alice.getPublicKey(), new TestVerifierContract.Commands.TestTransfer_2_1());
             tx.verifies();
             return null;
         });
