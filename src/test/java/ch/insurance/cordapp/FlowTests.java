@@ -160,13 +160,12 @@ public class FlowTests {
         // get ID to transfer to nodeC
         UniqueIdentifier linearId = output.getLinearId();
 
-        TokenTransfer.TokenTransferFlow transferFlow = new TokenTransfer.TokenTransferFlow(newOwner, linearId);
+        TokenTransfer.TokenTransferFlow transferFlow = new TokenTransfer.TokenTransferFlow(owner, linearId);
         CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(transferFlow);
         network.runNetwork();
         SignedTransaction signedTransferTransaction = futureTransfer.get();
         TokenState transferOutput = signedTransferTransaction.getTx().outputsOfType(TokenState.class).get(0);
 
-        assertEquals(newOwner, transferOutput.getOwner());
         assertEquals(owner, transferOutput.getIssuer());
 
     }
