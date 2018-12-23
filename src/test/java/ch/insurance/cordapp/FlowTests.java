@@ -1,31 +1,39 @@
 package ch.insurance.cordapp;
 
+import ch.insurance.cordapp.flows.TokenIssue;
+import ch.insurance.cordapp.flows.TokenSettlement;
+import ch.insurance.cordapp.flows.TokenTransfer;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.Command;
-import net.corda.core.contracts.TransactionState;
-import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.contracts.*;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.finance.contracts.asset.Cash;
 import net.corda.testing.node.MockNetwork;
 import net.corda.testing.node.StartedMockNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
+import static net.corda.core.contracts.Structures.withoutIssuer;
+import static net.corda.finance.Currencies.SWISS_FRANCS;
 import static org.junit.Assert.assertEquals;
 
-public class FlowTests {
+public class FlowTests extends BaseTests{
     private MockNetwork network;
     private StartedMockNode nodeA;
     private StartedMockNode nodeB;
     private StartedMockNode nodeC;
+    private Amount amount9CHF = Amount.parseCurrency("9 CHF");
+    private Amount amount90CHF = Amount.parseCurrency("90 CHF");
     private Amount amount99CHF = Amount.parseCurrency("99 CHF");
 
     @Before
     public void setup() {
-        network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp"));
+        network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp", "net.corda.finance"));
         nodeA = network.createPartyNode(null);
         nodeB = network.createPartyNode(null);
         nodeC = network.createPartyNode(null);
@@ -148,6 +156,8 @@ public class FlowTests {
 
     @Test
     public void transactionSettlingByFlow() throws Exception {
+        selfIssueCash(nodeB, SWISS_FRANCS(99));
+
         // create tokenstate to get new ID
         // current: A --> B
         Party owner = nodeB.getInfo().getLegalIdentities().get(0);
@@ -157,16 +167,21 @@ public class FlowTests {
         SignedTransaction signedTransaction = future.get();
         TokenState output = signedTransaction.getTx().outputsOfType(TokenState.class).get(0);
 
-        // get ID to transfer to nodeC
         UniqueIdentifier linearId = output.getLinearId();
 
-        TokenTransfer.TokenTransferFlow transferFlow = new TokenTransfer.TokenTransferFlow(owner, linearId);
-        CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(transferFlow);
+        TokenSettlement.TokenSettlementFlow settleFlow = new TokenSettlement.TokenSettlementFlow(linearId, amount99CHF);
+        CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(settleFlow);
         network.runNetwork();
-        SignedTransaction signedTransferTransaction = futureTransfer.get();
-        TokenState transferOutput = signedTransferTransaction.getTx().outputsOfType(TokenState.class).get(0);
 
-        assertEquals(owner, transferOutput.getIssuer());
+        SignedTransaction signedTransferTransaction = futureTransfer.get();
+        List<ContractState> outputs = signedTransferTransaction.getTx().getOutputStates();
+        List<Cash.State> outputCash = signedTransferTransaction.getTx().outputsOfType(Cash.State.class);
+
+        Cash.State change = this.getCashOutputByOwner(outputCash, nodeB);
+        Cash.State received = this.getCashOutputByOwner(outputCash, nodeA);
+
+        assertEquals(SWISS_FRANCS(1000-99), withoutIssuer(change.getAmount()));
+        assertEquals(SWISS_FRANCS(99), withoutIssuer(received.getAmount()));
 
     }
 

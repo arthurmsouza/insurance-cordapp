@@ -25,26 +25,29 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
 
 
     @NotNull
-    protected TransactionBuilder getTransactionBuilder(Party issuer, ImmutableList<PublicKey> requiredSigner, CommandData command) {
+    protected TransactionBuilder getTransactionBuilder(Party issuer, ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
         TransactionBuilder transactionBuilder = new TransactionBuilder();
-        transactionBuilder.setNotary(OneNotary());
+        transactionBuilder.setNotary(getFirstNotary());
         transactionBuilder.addCommand(command, requiredSigner);
         return transactionBuilder;
     }
-    protected TransactionBuilder getTransactionBuilder(ImmutableList<PublicKey> requiredSigner, CommandData command) {
+    protected TransactionBuilder getTransactionBuilder(ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
         return getTransactionBuilder(getOurIdentity(), requiredSigner, command);
     }
-    protected TransactionBuilder getMyTransactionBuilder(CommandData command) {
+    protected TransactionBuilder getMyTransactionBuilder(CommandData command) throws FlowException {
         return getTransactionBuilder(
                 getOurIdentity(),
                 ImmutableList.of(getOurIdentity().getOwningKey()),
                 command);
     }
 
-    protected Party OneNotary() {
-        return getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+    protected Party getFirstNotary() throws FlowException {
+        List<Party> notaries = getServiceHub().getNetworkMapCache().getNotaryIdentities();
+        if (notaries.isEmpty()) {
+            throw new FlowException("No available notary.");
+        }
+        return notaries.get(0);
     }
-
 
     protected StateAndRef<T> getStateByLinearId(Class stateClass, UniqueIdentifier linearId) throws FlowException {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
@@ -95,13 +98,13 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
         return progressTracker;
     }
 
-    protected static class SignTxFlowNoChecking extends SignTransactionFlow {
-        SignTxFlowNoChecking(FlowSession otherFlow, ProgressTracker progressTracker) {
+    public static class SignTxFlowNoChecking extends SignTransactionFlow {
+        public SignTxFlowNoChecking(FlowSession otherFlow, ProgressTracker progressTracker) {
             super(otherFlow, progressTracker);
         }
 
         @Override
-        protected void checkTransaction(SignedTransaction tx) {
+        public void checkTransaction(SignedTransaction tx) {
             // no checking
         }
     }

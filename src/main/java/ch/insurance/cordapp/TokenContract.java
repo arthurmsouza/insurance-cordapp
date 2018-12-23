@@ -91,15 +91,17 @@ public class TokenContract extends BaseContract {
     private void verifySettle(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
             TokenState tokenInputState = verifier
-                    .input().one().one(TokenState.class)
+                    .input().moreThanOne().one(TokenState.class)
                     .object();
+
             // Check there are output cash states.
+            // the new output cash will belong to the issuer payed by the owner
             // We don't care about cash inputs, the Cash contract handles those.
             List<Cash.State> acceptableCash = verifier
                     .output().output(Cash.State.class)
                     .notEmpty()
                     .filterWhere(x -> ((Cash.State)x).getOwner().equals(tokenInputState.getIssuer()))
-                    .notEmpty("There must be output cash paid to the recipient")
+                    .notEmpty("There must be output cash paid to the issuer party")
                     .list();
 
             // Sum the cash being sent to us (we don't care about the issuer).

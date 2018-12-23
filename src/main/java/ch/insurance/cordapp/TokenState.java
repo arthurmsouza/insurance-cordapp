@@ -86,8 +86,19 @@ public class TokenState implements LinearState {
         return this.getId();
     }
 
+    // create new state with new owner
     public TokenState withNewOwner(Party newOwner) {
         return new TokenState(this.owner, newOwner, this.amount, this.id);
     }
 
+    // create new state with new paid amount
+    public TokenState pay(Amount<Currency> amountToPay) {
+        return new TokenState(
+                this.issuer,
+                this.owner,
+                this.amount,
+                this.paid.plus(amountToPay),
+                this.id
+        );
+    }
 }

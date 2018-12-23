@@ -1,5 +1,8 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.flows;
 
+import ch.insurance.cordapp.BaseFlow;
+import ch.insurance.cordapp.TokenContract;
+import ch.insurance.cordapp.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Amount;
 import net.corda.core.flows.FinalityFlow;
@@ -41,7 +44,7 @@ public class TokenIssue {
         public SignedTransaction call() throws FlowException {
 
             // We choose our transaction's notary (the notary prevents double-spends).
-            Party notary = OneNotary();
+            Party notary = getFirstNotary();
             // We get a reference to our own identity.
             Party issuer = getOurIdentity();
 
