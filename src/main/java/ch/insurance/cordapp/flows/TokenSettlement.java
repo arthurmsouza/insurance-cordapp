@@ -69,7 +69,7 @@ public class TokenSettlement {
             final Party owner = tokenInputState.getOwner();
 
             // Stage 3. Abort if not current owner started this flow.
-            if (!settlerOwner.equals(tokenInputState.getOwner())) {
+            if (!owner.equals(settlerOwner)) {
                 throw new IllegalStateException("Token settling can only be initiated by the current owner.");
             }
 
@@ -106,8 +106,7 @@ public class TokenSettlement {
                     getServiceHub(),
                     builder,
                     amount,
-                    //getOurIdentityAndCert(),    // from
-                    tokenInputState.getIssuer(), // to
+                    tokenInputState.getIssuer(),
                     ImmutableSet.of())
                 .getSecond();
 
@@ -130,14 +129,14 @@ public class TokenSettlement {
             // add the issuer to the singers beside the current owner from the cash transaction
             final List<PublicKey> signingKeys = new ImmutableList.Builder<PublicKey>()
                     .addAll(cashSigningKeys)
-                    .add(tokenInputState.getIssuer().getOwningKey())
+                    .add(owner.getOwningKey())
                     .build();
             final SignedTransaction ptx = getServiceHub().signInitialTransaction(builder, signingKeys);
 
 
             // Stage 10. Get counterparty signature.
             progressTracker.setCurrentStep(COLLECTING);
-            final FlowSession session = initiateFlow(settlerOwner);
+            final FlowSession session = initiateFlow(issuer);
             subFlow(new IdentitySyncFlow.Send(session, ptx.getTx()));
             final SignedTransaction stx = subFlow(new CollectSignaturesFlow(
                     ptx,
@@ -147,7 +146,7 @@ public class TokenSettlement {
 
             // We get the transaction notarised and recorded automatically by the platform.
             progressTracker.setCurrentStep(FINALISING);
-            return subFlow(new FinalityFlow(stx, ImmutableSet.of(issuer)));
+            return subFlow(new FinalityFlow(stx, FINALISING.childProgressTracker()));
         }
     }
 

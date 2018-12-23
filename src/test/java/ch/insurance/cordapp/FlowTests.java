@@ -23,27 +23,6 @@ import static net.corda.finance.Currencies.SWISS_FRANCS;
 import static org.junit.Assert.assertEquals;
 
 public class FlowTests extends BaseTests{
-    private MockNetwork network;
-    private StartedMockNode nodeA;
-    private StartedMockNode nodeB;
-    private StartedMockNode nodeC;
-    private Amount amount9CHF = Amount.parseCurrency("9 CHF");
-    private Amount amount90CHF = Amount.parseCurrency("90 CHF");
-    private Amount amount99CHF = Amount.parseCurrency("99 CHF");
-
-    @Before
-    public void setup() {
-        network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp", "net.corda.finance"));
-        nodeA = network.createPartyNode(null);
-        nodeB = network.createPartyNode(null);
-        nodeC = network.createPartyNode(null);
-        network.runNetwork();
-    }
-
-    @After
-    public void tearDown() {
-        network.stopNodes();
-    }
 
     @Test
     public void transactionConstructedByFlowUsesTheCorrectNotary() throws Exception {
@@ -153,38 +132,6 @@ public class FlowTests extends BaseTests{
         assertEquals(oldOwner, transferOutput.getIssuer());
 
     }
-
-    @Test
-    public void transactionSettlingByFlow() throws Exception {
-        selfIssueCash(nodeB, SWISS_FRANCS(99));
-
-        // create tokenstate to get new ID
-        // current: A --> B
-        Party owner = nodeB.getInfo().getLegalIdentities().get(0);
-        TokenIssue.TokenIssueFlow flow = new TokenIssue.TokenIssueFlow(owner, amount99CHF);
-        CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
-        network.runNetwork();
-        SignedTransaction signedTransaction = future.get();
-        TokenState output = signedTransaction.getTx().outputsOfType(TokenState.class).get(0);
-
-        UniqueIdentifier linearId = output.getLinearId();
-
-        TokenSettlement.TokenSettlementFlow settleFlow = new TokenSettlement.TokenSettlementFlow(linearId, amount99CHF);
-        CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(settleFlow);
-        network.runNetwork();
-
-        SignedTransaction signedTransferTransaction = futureTransfer.get();
-        List<ContractState> outputs = signedTransferTransaction.getTx().getOutputStates();
-        List<Cash.State> outputCash = signedTransferTransaction.getTx().outputsOfType(Cash.State.class);
-
-        Cash.State change = this.getCashOutputByOwner(outputCash, nodeB);
-        Cash.State received = this.getCashOutputByOwner(outputCash, nodeA);
-
-        assertEquals(SWISS_FRANCS(1000-99), withoutIssuer(change.getAmount()));
-        assertEquals(SWISS_FRANCS(99), withoutIssuer(received.getAmount()));
-
-    }
-
 
 
 }
