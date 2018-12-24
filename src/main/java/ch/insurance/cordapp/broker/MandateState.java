@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,55 +18,63 @@ import java.util.stream.Collectors;
 public class MandateState implements LinearState {
     private final Party client;
     private final Party broker;
-    private final Instant start;
-    private final Instant expiry;
+    private final Instant startAt;
+    private final Instant expiredAt;
     private final boolean allowPnC;
     private final boolean allowIL;
     private final boolean allowGL;
     private final boolean allowHealth;
+    private final boolean accepted;
     private final UniqueIdentifier id;
 
 
     @ConstructorForDeserialization
-    public MandateState(@NotNull Party client, @NotNull Party broker, @NotNull Instant start, @NotNull Instant expiry, boolean allowPnC, boolean allowIL, boolean allowGL, boolean allowHealth, @NotNull UniqueIdentifier id) {
+    public MandateState(@NotNull Party client, @NotNull Party broker, @NotNull Instant startAt, @NotNull Instant expiredAt, boolean allowPnC, boolean allowIL, boolean allowGL, boolean allowHealth, boolean accepted, @NotNull UniqueIdentifier id) {
         this.client = client;
         this.broker = broker;
-        this.start = start;
-        this.expiry = expiry;
+        this.startAt = startAt;
+        this.expiredAt = expiredAt;
         this.allowPnC = allowPnC;
         this.allowIL = allowIL;
         this.allowGL = allowGL;
         this.allowHealth = allowHealth;
+        this.accepted = accepted;
         this.id = id;
+    }
+
+    public MandateState(@NotNull Party client, @NotNull Party broker, @NotNull Instant startAt, @NotNull Instant expiredAt, boolean allowPnC, boolean allowIL, boolean allowGL, boolean allowHealth) {
+        this.client = client;
+        this.broker = broker;
+        this.startAt = startAt;
+        this.expiredAt = expiredAt;
+        this.allowPnC = allowPnC;
+        this.allowIL = allowIL;
+        this.allowGL = allowGL;
+        this.allowHealth = allowHealth;
+        this.accepted = false;
+        this.id = new UniqueIdentifier();
     }
 
     public MandateState(@NotNull Party client, @NotNull Party broker, boolean allowPnC, boolean allowIL, boolean allowGL, boolean allowHealth) {
         this.client = client;
         this.broker = broker;
-        this.start = Instant.now().truncatedTo(ChronoUnit.DAYS);
-        this.expiry = this.start.plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+        this.startAt = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+        this.expiredAt = this.startAt.plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
         this.allowPnC = allowPnC;
         this.allowIL = allowIL;
         this.allowGL = allowGL;
         this.allowHealth = allowHealth;
+        this.accepted = false;
         this.id = new UniqueIdentifier();
     }
     public MandateState(@NotNull Party client, @NotNull Party broker) {
-        this.client = client;
-        this.broker = broker;
-        this.start = Instant.now().truncatedTo(ChronoUnit.DAYS);
-        this.expiry = this.start.plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
-        this.allowPnC = true;
-        this.allowIL = true;
-        this.allowGL = true;
-        this.allowHealth = true;
-        this.id = new UniqueIdentifier();
+        this(client, broker, true, true, true, true);
     }
 
     public boolean isValidAt(Instant time) {
-        // start <= time < expiry
-        return this.start.equals(time) || (
-                this.start.isBefore(time) && this.expiry.isAfter(time));
+        // startAt <= time < expiredAt
+        return this.startAt.equals(time) || (
+                this.startAt.isBefore(time) && this.expiredAt.isAfter(time));
     }
 
     @NotNull
@@ -94,13 +103,13 @@ public class MandateState implements LinearState {
     }
 
     @NotNull
-    public Instant getStart() {
-        return start;
+    public Instant getStartAt() {
+        return startAt;
     }
 
     @NotNull
-    public Instant getExpiry() {
-        return expiry;
+    public Instant getExpiredAt() {
+        return expiredAt;
     }
 
     public boolean isAllowPnC() {
@@ -125,4 +134,40 @@ public class MandateState implements LinearState {
         return this.getId();
     }
 
+
+    /*
+        private final Instant startAt;
+    private final Instant expiredAt;
+    private final boolean allowPnC;
+    private final boolean allowIL;
+    private final boolean allowGL;
+    private final boolean allowHealth;
+    private final boolean accepted;
+     */
+
+    public MandateState accept() {
+        return new MandateState(
+                this.client, this.broker,this.startAt, this.expiredAt, this.allowPnC, this.allowIL, this.allowGL, this.allowHealth, true, this.getId());
+    }
+
+    public MandateState accept(Instant startAt, long amountDuration, TemporalUnit unit) {
+        Instant newExpired = startAt.plus(amountDuration, unit);
+        return new MandateState(
+                this.client, this.broker,startAt, newExpired, this.allowPnC, this.allowIL, this.allowGL, this.allowHealth, true, this.getId());
+    }
+
+    public MandateState updateTimestamps(Instant startAt, long amountDuration, TemporalUnit unit) {
+        Instant newExpired = startAt.plus(amountDuration, unit);
+        return new MandateState(
+                this.client, this.broker,startAt, newExpired, this.allowPnC, this.allowIL, this.allowGL, this.allowHealth, false, this.getId());
+    }
+    public MandateState updateAllowance(boolean allowPnC, boolean allowIL, boolean allowGL, boolean allowHealth) {
+        return new MandateState(
+                this.client, this.broker,this.startAt, this.expiredAt, allowPnC, allowIL, allowGL, allowHealth, false, this.getId());
+    }
+
+
+    public boolean isAccepted() {
+        return accepted;
+    }
 }

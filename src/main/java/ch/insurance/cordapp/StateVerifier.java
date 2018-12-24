@@ -184,11 +184,9 @@ public class StateVerifier {
 class Signers extends StateVerifier {
 
     private Function<ContractState, ? extends AbstractParty> mapper;
-    private String name;
 
     public Signers(StateVerifier parent, @NotNull String text, Function<ContractState, ? extends AbstractParty> mapper) {
         super(parent, text);
-        this.name = name;
         this.mapper = mapper;
     }
     @Override

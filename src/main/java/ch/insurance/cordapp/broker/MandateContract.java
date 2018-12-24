@@ -1,140 +1,157 @@
 package ch.insurance.cordapp.broker;
 
-import ch.insurance.cordapp.TokenContract;
-import ch.insurance.cordapp.TokenState;
-import net.corda.core.contracts.*;
+import ch.insurance.cordapp.StateVerifier;
+import net.corda.core.contracts.CommandData;
+import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
-import net.corda.finance.contracts.asset.Cash;
-import net.corda.finance.utils.StateSumming;
 
-import java.security.PublicKey;
-import java.util.Currency;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static net.corda.core.contracts.ContractsDSL.requireThat;
-import static net.corda.core.contracts.Structures.withoutIssuer;
 
 public class MandateContract implements Contract {
-    public static String ID = "ch.insurance.cordapp.broker.TokenContract";
+    public static String ID = "ch.insurance.cordapp.broker.MandateContract";
 
     public interface Commands extends CommandData {
         class Request implements Commands { }
+        class Update implements Commands { }
         class Accept implements Commands { }
+        class Deny implements Commands { }
     }
 
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-        List<Command<TokenContract.Commands>> commands = tx.commandsOfType(TokenContract.Commands.class);
-        if (commands.size() != 1) throw new IllegalArgumentException();
-
-        Command<TokenContract.Commands> command = commands.get(0);
-        TokenContract.Commands commandData = commands.get(0).getValue();
-
-        if (commandData instanceof TokenContract.Commands.Issue) {
-            verifyIssue(tx, command);
-        } else if (commandData instanceof TokenContract.Commands.Transfer) {
-            verifyTransfer(tx, command);
-        } else if (commandData instanceof TokenContract.Commands.Settle) {
-            verifySettle(tx, command);
+        StateVerifier verifier = new StateVerifier(tx, MandateContract.Commands.class);
+        CommandData commandData = verifier.command();
+        if (commandData instanceof MandateContract.Commands.Request) {
+            verifyCreation(tx, verifier);
+        } else if (commandData instanceof MandateContract.Commands.Accept) {
+            verifyAcceptance(tx, verifier);
+        } else if (commandData instanceof MandateContract.Commands.Deny) {
+            verifyDenial(tx, verifier);
+        } else if (commandData instanceof MandateContract.Commands.Update) {
+            verifyUpdate(tx, verifier);
         }
     }
 
-    private void verifyIssue(LedgerTransaction tx, Command<TokenContract.Commands> command) {
-        List<ContractState> inputStates = tx.getInputStates();
-        List<TransactionState<ContractState>> outputs = tx.getOutputs();
-
-        List<TokenState> tokenStates = tx.outputsOfType(TokenState.class);
-        if (inputStates.size() != 0) throw new IllegalArgumentException("Must be no input.");
-        if (outputs.size() != 1) throw new IllegalArgumentException("Must be one output.");
-        if (tokenStates.size() != 1) throw new IllegalArgumentException("output should be an TokenState.");
-        if ((tx.outputsOfType(TokenState.class).get(0).getAmount().getQuantity() == 0)) throw new IllegalArgumentException("output state needed");
-        if (tokenStates.get(0).getIssuer().equals(tokenStates.get(0).getOwner()))
-            throw new IllegalArgumentException("issuer and owner cannot be the same");
-
-        // Grabbing the transaction's contents.
-        final List<PublicKey> requiredSigners = command.getSigners();
-        if (!requiredSigners.contains(tokenStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException();
-        }
-    }
-    private void verifyTransfer(LedgerTransaction tx, Command<TokenContract.Commands> command) {
-        List<ContractState> inputStates = tx.getInputStates();
-        List<TransactionState<ContractState>> outputs = tx.getOutputs();
-
-        List<TokenState> tokenInputStates = tx.inputsOfType(TokenState.class);
-        List<TokenState> tokenOutputStates = tx.outputsOfType(TokenState.class);
-        if (inputStates.size() != 1) throw new IllegalArgumentException("Must be one input with id.");
-        if (outputs.size() != 1) throw new IllegalArgumentException("Must be one output.");
-        if (tokenInputStates.size() != 1) throw new IllegalArgumentException("input should be an TokenState.");
-        if (tokenOutputStates.size() != 1) throw new IllegalArgumentException("output should be an TokenState.");
-        if (tokenOutputStates.get(0).getIssuer().equals(tokenOutputStates.get(0).getOwner()))
-            throw new IllegalArgumentException("issuer and owner cannot be the same");
-        //validate old owner is new issuer
-        if (!tokenOutputStates.get(0).getIssuer().equals(tokenInputStates.get(0).getOwner()))
-            throw new IllegalArgumentException("Only current owner can transfer it to new owner");
-
-        // Grabbing the transaction's contents.
-        final List<PublicKey> requiredSigners = command.getSigners();
-        if (!requiredSigners.contains(tokenOutputStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException("new owner needs to sign");
-        }
-        //assumption: old issuer must sign transfer to new owner
-        if (!requiredSigners.contains(tokenInputStates.get(0).getIssuer().getOwningKey())) {
-            throw new IllegalArgumentException("old issuer must sign transfer to new owner");
-        }
-    }
-    private void verifySettle(LedgerTransaction tx, Command<TokenContract.Commands> command) {
+    private void verifyCreation(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
-            // Grabbing the transaction's contents.
-            final List<PublicKey> requiredSigners = command.getSigners();
-
-            // Check for the presence of an input token state.
-            List<TokenState> tokenInputStates = tx.inputsOfType(TokenState.class);
-            req.using("There must be one input token state.", tokenInputStates.size() == 1);
-
-            // Check there are output cash states.
-            // We don't care about cash inputs, the Cash contract handles those.
-            List<Cash.State> cash = tx.outputsOfType(Cash.State.class);
-            req.using("There must be output cash.", !cash.isEmpty());
-
-            // Check that the cash is being assigned to us.
-            TokenState tokenInputState = tokenInputStates.get(0);
-            List<Cash.State> acceptableCash = cash.stream().filter(
-                    it -> it.getOwner().equals(tokenInputState.getIssuer())).collect(Collectors.toList());
-            req.using("There must be output cash paid to the recipient.", !acceptableCash.isEmpty());
-
-            // Sum the cash being sent to us (we don't care about the issuer).
-            Amount<Currency> sumAcceptableCash = withoutIssuer(StateSumming.sumCash(acceptableCash));
-            Amount<Currency> amountOutstanding = tokenInputState.getAmount().minus(tokenInputState.getPaid());
-            req.using("The amount settled cannot be more than the amount outstanding.", amountOutstanding.compareTo(sumAcceptableCash) >= 0);
-
-            List<TokenState> tokenOutputStates = tx.outputsOfType(TokenState.class);
-            // Check to see if we need an output token state or not.
-            if (amountOutstanding.equals(sumAcceptableCash)) {
-                // If the obligation has been fully settled then there should be no token state output state.
-                req.using("There must be no output token state as it has been fully settled.", tokenOutputStates.isEmpty());
-            } else {
-                // If the obligation has been partially settled then it should still exist.
-                req.using("There must be one output token state.", tokenOutputStates.size() == 1);
-
-                // Check only the paid property changes.
-                TokenState tokenOutputState = tokenOutputStates.get(0);
-                req.using("The amount may not change when settling.", tokenInputState.getAmount().equals(tokenOutputState.getAmount()));
-                req.using("The owner may not change when settling.", tokenInputState.getOwner().equals(tokenOutputState.getOwner()));
-                req.using("The issuer may not change when settling.", tokenInputState.getIssuer().equals(tokenOutputState.getIssuer()));
-                req.using("The linearId may not change when settling.", tokenInputState.getLinearId().equals(tokenOutputState.getLinearId()));
-
-                // Check the paid property is updated correctly.
-                req.using("Paid property incorrectly updated.",
-                        tokenOutputState.getPaid().equals(
-                                tokenInputState.getPaid().plus(sumAcceptableCash)));
-            }
-            // Checks the required parties have signed.
-            req.using("Both owner and issuer together only must sign token state settle transaction.",
-                    requiredSigners.equals(tokenInputState.getParticipantKeys()));
+            verifier.input().empty("input must be empty");
+            MandateState mandate = verifier
+                    .output().one().one(MandateState.class)
+                    .differentParty(
+                            "client", p1 -> ((MandateState)p1).getClient(),
+                            "broker", p2 -> ((MandateState)p2).getBroker())
+                    .signer("client must be the signer", state -> ((MandateState)state).getClient())
+                    .object();
+            req.using("mandate must be not accepted",
+                    !mandate.isAccepted());
+            this.verifyAllowances(mandate);
+            this.verifyTimestamps(mandate);
             return null;
         });
     }
 
+    private void verifyTimestamps(MandateState mandate) {
+        requireThat(req -> {
+            req.using(
+                    "expired date must be later than start",
+                    mandate.getExpiredAt().isAfter(mandate.getStartAt()));
+            req.using(
+                    "difference between start and end must be at least 1 day",
+                    mandate.getStartAt().plus(1, ChronoUnit.DAYS).isBefore(
+                            mandate.getExpiredAt()));
+            req.using(
+                    "expired date must be in the future",
+                    mandate.getExpiredAt().isAfter(Instant.now()));
+            req.using(
+                    "start date must be in the future",
+                    mandate.getStartAt().isAfter(Instant.now()));
+            return null;
+        });
+    }
+
+
+    private void verifyAllowances(MandateState mandate) {
+        requireThat(req -> {
+            req.using(
+                    "one line of business must be choosen",
+                    mandate.isAllowGL() || mandate.isAllowHealth() || mandate.isAllowIL() || mandate.isAllowPnC());
+            return null;
+        });
+    }
+    private void verifySameValues(MandateState input, MandateState output) {
+        requireThat(req -> {
+            req.using("client must be the same",
+                    input.getClient().equals(output.getClient()));
+            req.using("broker must be the same",
+                    output.getBroker().equals(input.getBroker()));
+            req.using("id must be same",
+                    input.getId().equals(output.getId()));
+            return null;
+        });
+    }
+
+    private void verifyInputOnUpdate(MandateState input) {
+        requireThat(req -> {
+            req.using("input mandate must be not accepted",
+                    !input.isAccepted());
+            return null;
+        });
+    }
+
+
+    private void verifyUpdate(LedgerTransaction tx, StateVerifier verifier) {
+        requireThat(req -> {
+            MandateState input = verifier
+                    .input().one().one(MandateState.class)
+                    .signer("client must be the signer", state -> ((MandateState)state).getClient())
+                    .object();
+            MandateState output = verifier
+                    .output().one().one(MandateState.class)
+                    .object();
+            req.using("mandate is still not accepted",
+                    !output.isAccepted());
+            this.verifyInputOnUpdate(input);
+            this.verifyAllowances(output);
+            this.verifyTimestamps(output);
+            this.verifySameValues(input, output);
+            return null;
+        });
+    }
+
+    private void verifyAcceptance(LedgerTransaction tx, StateVerifier verifier) {
+        requireThat(req -> {
+
+            MandateState input = verifier
+                    .input().one().one(MandateState.class)
+                    .participantsAreSigner("all participants must be signer")
+                    .object();
+            MandateState output = verifier
+                    .output().one().one(MandateState.class)
+                    .object();
+            req.using("mandate must be accepted",
+                    output.isAccepted());
+            this.verifyInputOnUpdate(input);
+            this.verifyAllowances(output);
+            this.verifyTimestamps(output);
+            this.verifySameValues(input, output);
+
+            return null;
+        });
+    }
+    private void verifyDenial(LedgerTransaction tx, StateVerifier verifier) {
+        requireThat(req -> {
+            MandateState input = verifier
+                    .input().moreThanOne().one(MandateState.class)
+                    .object();
+            verifier
+                    .output().empty();
+
+            // Checks the required parties have signed.
+            verifier.input().participantsAreSigner("Both owner and issuer together only must sign token state settle transaction");
+            return null;
+        });
+    }
 }
