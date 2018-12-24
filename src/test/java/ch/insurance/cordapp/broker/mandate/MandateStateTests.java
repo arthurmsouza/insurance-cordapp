@@ -1,8 +1,6 @@
 package ch.insurance.cordapp.broker.mandate;
 
-import ch.insurance.cordapp.TokenState;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.ContractState;
+import ch.insurance.cordapp.broker.MandateState;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.testing.core.TestIdentity;

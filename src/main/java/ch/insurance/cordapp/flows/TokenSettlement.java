@@ -106,6 +106,7 @@ public class TokenSettlement {
                     getServiceHub(),
                     builder,
                     amount,
+                    getOurIdentityAndCert(),
                     tokenInputState.getIssuer(),
                     ImmutableSet.of())
                 .getSecond();

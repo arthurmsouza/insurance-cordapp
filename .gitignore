@@ -1,8 +1,8 @@
 .gradle
 .idea/
-build
+**/build
 lib/dependencies/
 .DS_Store
-out
+**/out
 insurance-cordapp.iml
-bin
+**/bin

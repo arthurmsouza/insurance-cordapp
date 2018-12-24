@@ -1,4 +1,4 @@
-package ch.insurance.cordapp.broker.mandate;
+package ch.insurance.cordapp.broker;
 
 import net.corda.core.contracts.LinearState;
 import net.corda.core.contracts.UniqueIdentifier;

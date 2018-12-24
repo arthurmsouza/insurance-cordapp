@@ -1,4 +1,4 @@
-package ch.insurance.cordapp.broker.mandate;
+package ch.insurance.cordapp.broker;
 
 import ch.insurance.cordapp.TokenContract;
 import ch.insurance.cordapp.TokenState;
@@ -16,7 +16,7 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
 import static net.corda.core.contracts.Structures.withoutIssuer;
 
 public class MandateContract implements Contract {
-    public static String ID = "ch.insurance.cordapp.TokenContract";
+    public static String ID = "ch.insurance.cordapp.broker.TokenContract";
 
     public interface Commands extends CommandData {
         class Request implements Commands { }
