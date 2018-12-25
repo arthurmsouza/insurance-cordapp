@@ -1,6 +1,7 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token.api;
 
-import ch.insurance.cordapp.flows.TokenIssue;
+import ch.insurance.cordapp.token.TokenState;
+import ch.insurance.cordapp.token.flow.TokenIssue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;

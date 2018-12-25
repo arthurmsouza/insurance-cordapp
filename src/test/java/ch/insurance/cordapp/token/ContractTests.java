@@ -1,4 +1,4 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;

@@ -1,4 +1,4 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
 import org.junit.Test;
 

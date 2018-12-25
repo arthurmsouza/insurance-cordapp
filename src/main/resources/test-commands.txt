@@ -7,4 +7,4 @@ flow start TokenTransferFlow newOwner: PartyC, id: <id>
 show all transactions
 ------------------------------
 
-run vaultQuery contractStateType: ch.insurance.cordapp.TokenState
+run vaultQuery contractStateType: ch.insurance.cordapp.token.TokenState

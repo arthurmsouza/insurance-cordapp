@@ -1,8 +1,6 @@
-package ch.insurance.cordapp.flows;
+package ch.insurance.cordapp.token;
 
 import ch.insurance.cordapp.BaseFlow;
-import ch.insurance.cordapp.TokenContract;
-import ch.insurance.cordapp.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -17,13 +15,11 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.finance.contracts.asset.Cash;
 
-import static net.corda.finance.contracts.GetBalances.getCashBalance;
-
 import java.security.PublicKey;
 import java.util.Currency;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
+import static net.corda.finance.contracts.GetBalances.getCashBalance;
 
 public class TokenSettlement {
 
@@ -70,7 +66,7 @@ public class TokenSettlement {
 
             // Stage 3. Abort if not current owner started this flow.
             if (!owner.equals(settlerOwner)) {
-                throw new IllegalStateException("Token settling can only be initiated by the current owner.");
+                throw new FlowException("Token settling can only be initiated by the current owner.");
             }
 
             // Stage 4. Check we have enough cash to settle the requested amount.

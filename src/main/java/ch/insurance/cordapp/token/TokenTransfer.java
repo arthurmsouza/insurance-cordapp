@@ -1,8 +1,6 @@
-package ch.insurance.cordapp.flows;
+package ch.insurance.cordapp.token;
 
 import ch.insurance.cordapp.BaseFlow;
-import ch.insurance.cordapp.TokenContract;
-import ch.insurance.cordapp.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

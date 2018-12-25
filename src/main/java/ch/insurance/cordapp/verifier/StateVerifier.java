@@ -18,11 +18,11 @@ import static net.corda.core.contracts.ContractsDSL.requireSingleCommand;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 interface TransactionDelegate {
-    public List<CommandWithParties<CommandData>> getCommands();
-    public List<ContractState> inputsOfType(Class stateClass);
-    public List<ContractState> outputsOfType(Class stateClass);
-    public List<ContractState> getOutputStates();
-    public List<ContractState> getInputStates();
+    List<CommandWithParties<CommandData>> getCommands();
+    List<ContractState> inputsOfType(Class stateClass);
+    List<ContractState> outputsOfType(Class stateClass);
+    List<ContractState> getOutputStates();
+    List<ContractState> getInputStates();
 }
 
 public class StateVerifier {
@@ -533,6 +533,15 @@ public class StateVerifier {
         }
     }
 
+
+    class NoList<T> extends  StateList {
+        NoList(StateVerifier parent) {  super(parent); }
+        NoList(StateVerifier parent, Class<T> stateClass) {  super(parent, stateClass); }
+        @Override
+        public List<ContractState> getList() {
+            throw new IllegalArgumentException("Failed requirement: no list loaded");
+        }
+    }
 
     class InputList<T> extends  StateList {
         InputList(StateVerifier parent) {  super(parent); }

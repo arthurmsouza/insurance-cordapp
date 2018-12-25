@@ -1,19 +1,13 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
-import ch.insurance.cordapp.flows.TokenIssue;
-import ch.insurance.cordapp.flows.TokenSettlement;
-import ch.insurance.cordapp.flows.TokenTransfer;
-import com.google.common.collect.ImmutableList;
+import ch.insurance.cordapp.token.flow.TokenIssue;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.*;
+import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.finance.contracts.asset.Cash;
-import net.corda.testing.node.MockNetwork;
-import net.corda.testing.node.StartedMockNode;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -25,7 +19,7 @@ import static net.corda.finance.Currencies.SWISS_FRANCS;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 
-public class FlowSettleTests extends BaseTests{
+public class FlowSettleTests extends BaseTests {
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -99,7 +93,7 @@ public class FlowSettleTests extends BaseTests{
 
 
 
-    @Test
+    @Test(expected = FlowException.class)
     public void transactionNotEnoughCashByFlow() throws Exception {
         selfIssueCash(nodeB, SWISS_FRANCS(1));
 
@@ -115,7 +109,7 @@ public class FlowSettleTests extends BaseTests{
         UniqueIdentifier linearId = output.getLinearId();
 
         // Attempt settlement.
-        exception.expectCause(instanceOf(FlowException.class));
+        exception.expectMessage("net.corda.core.flows.FlowException");
 
         TokenSettlement.TokenSettlementFlow settleFlow = new TokenSettlement.TokenSettlementFlow(linearId, amount90CHF);
         CordaFuture<SignedTransaction> futureTransfer = nodeB.startFlow(settleFlow);

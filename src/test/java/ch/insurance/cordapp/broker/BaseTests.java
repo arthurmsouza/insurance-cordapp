@@ -33,7 +33,7 @@ abstract public class BaseTests {
     public void setup(boolean withNodes) {
 
         if (withNodes) {
-            network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp.broker", "net.corda.finance"));
+            network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp", "net.corda.finance"));
             aliceTheCustomerNode = network.createPartyNode(aliceID.getName());
             bobTheBrokerNode = network.createPartyNode(bobID.getName());
             cesarTheInsurerNode = network.createPartyNode(cesarID.getName());

@@ -1,28 +1,20 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
-import ch.insurance.cordapp.flows.TokenIssue;
-import ch.insurance.cordapp.flows.TokenSettlement;
-import ch.insurance.cordapp.flows.TokenTransfer;
-import com.google.common.collect.ImmutableList;
+import ch.insurance.cordapp.token.flow.TokenIssue;
+import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.*;
-import net.corda.core.identity.CordaX500Name;
+import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.Command;
+import net.corda.core.contracts.TransactionState;
+import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.flows.FlowException;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.finance.contracts.asset.Cash;
-import net.corda.testing.node.MockNetwork;
-import net.corda.testing.node.StartedMockNode;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-
-import static net.corda.core.contracts.Structures.withoutIssuer;
-import static net.corda.finance.Currencies.SWISS_FRANCS;
 import static org.junit.Assert.assertEquals;
 
-public class FlowTests extends BaseTests{
+public class FlowTests extends BaseTests {
 
     @Test
     public void transactionConstructedByFlowUsesTheCorrectNotary() throws Exception {
@@ -30,11 +22,11 @@ public class FlowTests extends BaseTests{
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        TokenState output = verifier.output().one().one(TokenState.class).object();
 
-        assertEquals(1, signedTransaction.getTx().getOutputStates().size());
-        TransactionState output = signedTransaction.getTx().getOutputs().get(0);
-
-        assertEquals(network.getNotaryNodes().get(0).getInfo().getLegalIdentities().get(0), output.getNotary());
+        TransactionState state = signedTransaction.getTx().getOutputs().get(0);
+        assertEquals(network.getNotaryNodes().get(0).getInfo().getLegalIdentities().get(0), state.getNotary());
     }
 
     @Test
@@ -44,8 +36,8 @@ public class FlowTests extends BaseTests{
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
 
-        assertEquals(1, signedTransaction.getTx().getOutputStates().size());
-        TokenState output = signedTransaction.getTx().outputsOfType(TokenState.class).get(0);
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        TokenState output = verifier.output().one().one(TokenState.class).object();
 
         assertEquals(nodeB.getInfo().getLegalIdentities().get(0), output.getOwner());
         assertEquals(Amount.parseCurrency("99 CHF"), output.getAmount());
@@ -57,11 +49,11 @@ public class FlowTests extends BaseTests{
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        TokenState output = verifier.output().one().one(TokenState.class).object();
+        TransactionState state = signedTransaction.getTx().getOutputs().get(0);
 
-        assertEquals(1, signedTransaction.getTx().getOutputStates().size());
-        TransactionState output = signedTransaction.getTx().getOutputs().get(0);
-
-        assertEquals("ch.insurance.cordapp.TokenContract", output.getContract());
+        assertEquals("ch.insurance.cordapp.token.TokenContract", state.getContract());
     }
 
     @Test
@@ -71,9 +63,10 @@ public class FlowTests extends BaseTests{
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
 
-        assertEquals(1, signedTransaction.getTx().getCommands().size());
-        Command command = signedTransaction.getTx().getCommands().get(0);
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        TokenState output = verifier.output().one().one(TokenState.class).object();
 
+        Command command = signedTransaction.getTx().getCommands().get(0);
         assert(command.getValue() instanceof TokenContract.Commands.Issue);
     }
 
@@ -84,7 +77,8 @@ public class FlowTests extends BaseTests{
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
 
-        assertEquals(1, signedTransaction.getTx().getCommands().size());
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        TokenState output = verifier.output().one().one(TokenState.class).object();
         Command command = signedTransaction.getTx().getCommands().get(0);
 
         assertEquals(1, command.getSigners().size());
@@ -98,8 +92,10 @@ public class FlowTests extends BaseTests{
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
 
-        assertEquals(0, signedTransaction.getTx().getInputs().size());
-        // The single attachment is the contract attachment.
+        StateVerifier verifier = StateVerifier.fromTransaction(signedTransaction, ledgerServices);
+        verifier.input().empty();
+        TokenState output = verifier.output().one().one(TokenState.class).object();
+
         assertEquals(1, signedTransaction.getTx().getAttachments().size());
         assertEquals(null, signedTransaction.getTx().getTimeWindow());
 
@@ -115,6 +111,7 @@ public class FlowTests extends BaseTests{
         CordaFuture<SignedTransaction> future = nodeA.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTransaction = future.get();
+
         TokenState output = signedTransaction.getTx().outputsOfType(TokenState.class).get(0);
 
         // get ID to transfer to nodeC

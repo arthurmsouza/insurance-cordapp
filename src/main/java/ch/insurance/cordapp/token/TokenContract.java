@@ -1,5 +1,6 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
+import ch.insurance.cordapp.BaseContract;
 import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.CommandData;
@@ -16,7 +17,7 @@ import static net.corda.core.contracts.Structures.withoutIssuer;
 /* Our contract, governing how our state will evolve over time.
  * See src/main/java/examples/ArtContract.java for an example. */
 public class TokenContract extends BaseContract {
-    public static String ID = "ch.insurance.cordapp.TokenContract";
+    public static String ID = "ch.insurance.cordapp.token.TokenContract";
 
     public interface Commands extends CommandData {
         class Issue implements Commands { }

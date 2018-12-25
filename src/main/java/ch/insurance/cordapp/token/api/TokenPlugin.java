@@ -1,4 +1,4 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;

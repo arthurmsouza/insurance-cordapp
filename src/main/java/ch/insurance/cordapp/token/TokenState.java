@@ -1,4 +1,4 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.LinearState;

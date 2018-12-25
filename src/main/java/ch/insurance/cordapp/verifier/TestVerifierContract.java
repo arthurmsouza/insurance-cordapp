@@ -1,7 +1,7 @@
 package ch.insurance.cordapp.verifier;
 
 import ch.insurance.cordapp.BaseContract;
-import ch.insurance.cordapp.TokenState;
+import ch.insurance.cordapp.token.TokenState;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;

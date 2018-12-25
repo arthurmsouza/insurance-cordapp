@@ -1,13 +1,16 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.token;
 
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.utilities.OpaqueBytes;
 import net.corda.finance.contracts.asset.Cash;
 import net.corda.finance.flows.CashIssueFlow;
+import net.corda.testing.core.TestIdentity;
 import net.corda.testing.node.MockNetwork;
+import net.corda.testing.node.MockServices;
 import net.corda.testing.node.StartedMockNode;
 import org.junit.After;
 import org.junit.Before;
@@ -28,6 +31,9 @@ public class BaseTests {
     protected Amount amount90CHF = Amount.parseCurrency("90 CHF");
     protected Amount amount99CHF = Amount.parseCurrency("99 CHF");
 
+    private final TestIdentity ledgerTestID = new TestIdentity(new CordaX500Name("Test Node", "Uster", "CH"));
+    protected MockServices ledgerServices = null;
+
     @Before
     public void setup() {
         network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp", "net.corda.finance"));
@@ -35,6 +41,10 @@ public class BaseTests {
         nodeB = network.createPartyNode(null);
         nodeC = network.createPartyNode(null);
         network.runNetwork();
+        ledgerServices = new MockServices(
+                ImmutableList.of("ch.insurance.cordapp.token"),
+                ledgerTestID
+        );
     }
 
     @After

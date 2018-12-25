@@ -1,7 +1,6 @@
 package ch.insurance.cordapp.verifier;
 
-import ch.insurance.cordapp.TokenState;
-import ch.insurance.cordapp.verifier.TestVerifierContract;
+import ch.insurance.cordapp.token.TokenState;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.Amount;
 import net.corda.core.identity.CordaX500Name;

@@ -1,8 +1,8 @@
-package ch.insurance.cordapp.flows;
+package ch.insurance.cordapp.token.flow;
 
 import ch.insurance.cordapp.BaseFlow;
-import ch.insurance.cordapp.TokenContract;
-import ch.insurance.cordapp.TokenState;
+import ch.insurance.cordapp.token.TokenContract;
+import ch.insurance.cordapp.token.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Amount;
 import net.corda.core.flows.FinalityFlow;
