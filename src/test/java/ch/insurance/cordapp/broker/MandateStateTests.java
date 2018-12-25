@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class MandateStateTests extends BaseTests {
     private final Instant expiryYearly = this.start.plus(1365, ChronoUnit.DAYS);
@@ -36,7 +37,7 @@ public class MandateStateTests extends BaseTests {
 
     @Test
     public void testImplementsContractState() {
-        assert(new MandateState(aliceTheCustomer, bobTheBroker) instanceof MandateState);
+        assertNotNull(new MandateState(aliceTheCustomer, bobTheBroker));
     }
 
     @Test

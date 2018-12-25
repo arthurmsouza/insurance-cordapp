@@ -1,12 +1,12 @@
 package ch.insurance.cordapp;
 
 import com.google.common.collect.ImmutableList;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.CommandData;
-import net.corda.core.contracts.CommandWithParties;
-import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.*;
+import net.corda.core.flows.FlowException;
 import net.corda.core.identity.AbstractParty;
+import net.corda.core.node.ServiceHub;
 import net.corda.core.transactions.LedgerTransaction;
+import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.PublicKey;
@@ -18,24 +18,53 @@ import java.util.stream.Collectors;
 import static net.corda.core.contracts.ContractsDSL.requireSingleCommand;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
+interface TransactionDelegate {
+    public List<CommandWithParties<CommandData>> getCommands();
+
+    public List<ContractState> inputsOfType(Class stateClass);
+
+    public List<ContractState> outputsOfType(Class stateClass);
+
+    public List<ContractState> getOutputStates();
+
+    public List<ContractState> getInputStates();
+}
+
+
 public class StateVerifier {
-    protected LedgerTransaction tx;
+    protected TransactionDelegate tx;
     protected StateVerifier parent;
     protected String description = "";
     protected Class<? extends CommandData> commandClazz;
     protected CommandWithParties<? extends CommandData> command;
     protected String text;
 
-    public StateVerifier(LedgerTransaction tx) {
-        this.tx = tx;
+    public static StateVerifier fromTransaction(SignedTransaction tx, ServiceHub serviceHub) {
+        return new SignedStateVerifier(tx, serviceHub);
+    }
+    public static <T extends CommandData> StateVerifier fromTransaction(LedgerTransaction tx, Class<T> clazz) {
+        return new LedgerStateVerifier(tx, clazz);
+    }
+    public static StateVerifier fromTransaction(LedgerTransaction tx) {
+        return new LedgerStateVerifier(tx);
+    }
+
+
+    protected StateVerifier() {
         this.parent = null;
     }
-    public <T extends CommandData> StateVerifier(LedgerTransaction tx, Class<T> clazz) {
+    protected void setTransaction(TransactionDelegate tx) {
+        this.tx = tx;
+    }
+
+    /*
+    public <T extends CommandData> StateVerifier(TransactionDelegate tx, Class<T> clazz) {
         this.tx = tx;
         this.parent = null;
         this.commandClazz = clazz;
         this.command = requireSingleCommand(tx.getCommands(), (Class<? extends CommandData>)this.commandClazz);
     }
+    */
     protected StateVerifier(StateVerifier parent) {
         this.tx = parent.tx;
         this.parent = parent;
@@ -568,3 +597,5 @@ class FilterWhere<T extends  ContractState> extends  StateList {
                 .collect(Collectors.toList());
     }
 }
+
+

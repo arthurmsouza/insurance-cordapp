@@ -1,7 +1,6 @@
 package ch.insurance.cordapp.broker;
 
 import com.google.common.collect.ImmutableList;
-import net.corda.core.contracts.Amount;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.testing.core.TestIdentity;
@@ -9,7 +8,6 @@ import net.corda.testing.node.MockNetwork;
 import net.corda.testing.node.MockServices;
 import net.corda.testing.node.StartedMockNode;
 import org.junit.After;
-import org.junit.Before;
 
 import java.time.Instant;
 
@@ -34,17 +32,23 @@ abstract public class BaseTests {
 
     public void setup(boolean withNodes) {
 
-        aliceTheCustomer = aliceID.getParty();
-        bobTheBroker = bobID.getParty();
-        cesarTheInsurer = cesarID.getParty();
-
         if (withNodes) {
             network = new MockNetwork(ImmutableList.of("ch.insurance.cordapp.broker", "net.corda.finance"));
             aliceTheCustomerNode = network.createPartyNode(aliceID.getName());
             bobTheBrokerNode = network.createPartyNode(bobID.getName());
             cesarTheInsurerNode = network.createPartyNode(cesarID.getName());
+
+            aliceTheCustomer = aliceTheCustomerNode.getInfo().getLegalIdentities().get(0);
+            bobTheBroker = bobTheBrokerNode.getInfo().getLegalIdentities().get(0);
+            cesarTheInsurer = cesarTheInsurerNode.getInfo().getLegalIdentities().get(0);
+
             network.runNetwork();
+        } else {
+            aliceTheCustomer = aliceID.getParty();
+            bobTheBroker = bobID.getParty();
+            cesarTheInsurer = cesarID.getParty();
         }
+
 
         ledgerServices = new MockServices(
                 ImmutableList.of("ch.insurance.cordapp.broker"),

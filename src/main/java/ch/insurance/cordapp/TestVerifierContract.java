@@ -28,7 +28,7 @@ public class TestVerifierContract extends BaseContract {
         Command<Commands> command = commands.get(0);
         Commands commandData = commands.get(0).getValue();
 
-        StateVerifier verifier = new StateVerifier(tx, Commands.class);
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, Commands.class);
 
         if (commandData instanceof Commands.TestIssueNormal) {
             verifier.input().empty();

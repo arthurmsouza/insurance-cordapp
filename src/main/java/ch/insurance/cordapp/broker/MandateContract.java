@@ -22,20 +22,20 @@ public class MandateContract implements Contract {
 
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-        StateVerifier verifier = new StateVerifier(tx, MandateContract.Commands.class);
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, MandateContract.Commands.class);
         CommandData commandData = verifier.command();
         if (commandData instanceof MandateContract.Commands.Request) {
-            verifyCreation(tx, verifier);
+            verifyRequest(tx, verifier);
         } else if (commandData instanceof MandateContract.Commands.Accept) {
-            verifyAcceptance(tx, verifier);
+            verifyAccept(tx, verifier);
         } else if (commandData instanceof MandateContract.Commands.Deny) {
-            verifyDenial(tx, verifier);
+            verifyDeny(tx, verifier);
         } else if (commandData instanceof MandateContract.Commands.Update) {
             verifyUpdate(tx, verifier);
         }
     }
 
-    private void verifyCreation(LedgerTransaction tx, StateVerifier verifier) {
+    private void verifyRequest(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
             verifier.input().empty("input must be empty");
             MandateState mandate = verifier
@@ -77,7 +77,7 @@ public class MandateContract implements Contract {
         requireThat(req -> {
             req.using(
                     "one line of business must be choosen",
-                    mandate.isAllowGL() || mandate.isAllowHealth() || mandate.isAllowIL() || mandate.isAllowPnC());
+                    !mandate.getAllowedBusiness().isEmpty());
             return null;
         });
     }
@@ -121,7 +121,7 @@ public class MandateContract implements Contract {
         });
     }
 
-    private void verifyAcceptance(LedgerTransaction tx, StateVerifier verifier) {
+    private void verifyAccept(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
 
             MandateState input = verifier
@@ -141,7 +141,7 @@ public class MandateContract implements Contract {
             return null;
         });
     }
-    private void verifyDenial(LedgerTransaction tx, StateVerifier verifier) {
+    private void verifyDeny(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
             MandateState input = verifier
                     .input().moreThanOne().one(MandateState.class)

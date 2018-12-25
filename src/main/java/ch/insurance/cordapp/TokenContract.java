@@ -25,7 +25,7 @@ public class TokenContract extends BaseContract {
 
 	@Override
 	public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-        StateVerifier verifier = new StateVerifier(tx, Commands.class);
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, Commands.class);
         CommandData commandData = verifier.command();
         if (commandData instanceof Commands.Issue) {
             verifyIssue(tx, verifier);

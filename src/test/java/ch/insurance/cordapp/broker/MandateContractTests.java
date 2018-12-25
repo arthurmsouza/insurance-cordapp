@@ -1,5 +1,6 @@
 package ch.insurance.cordapp.broker;
 
+import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +89,7 @@ public class MandateContractTests extends BaseTests {
     }
 
     private MandateState newMandate(@NotNull Instant startAt, @NotNull Instant expiredAt) {
-        return new MandateState(aliceTheCustomer, bobTheBroker, startAt, expiredAt, true, true, true, true);
+        return new MandateState(aliceTheCustomer, bobTheBroker, startAt, expiredAt, LineOfBusiness.all().makeImmutable());
     }
     private MandateState newMandate() {
         return new MandateState(aliceTheCustomer, bobTheBroker);
@@ -225,7 +226,7 @@ public class MandateContractTests extends BaseTests {
     public void mandate_update_allowances() {
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(false, false, false, false);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -234,7 +235,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(true, false, false, false);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().PnC());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -243,7 +244,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(false, true, false, false);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().IL());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -252,7 +253,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(false, false, true, false);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().GL());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -261,7 +262,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(false, false, false, true);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().Health());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -270,7 +271,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowance(false, true, true, true);
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().LnS());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
