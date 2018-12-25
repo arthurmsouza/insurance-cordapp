@@ -1,6 +1,7 @@
 package ch.insurance.cordapp.token;
 
-import ch.insurance.cordapp.token.flow.TokenIssue;
+import ch.insurance.cordapp.token.flows.TokenIssue;
+import ch.insurance.cordapp.token.flows.TokenSettlement;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -16,7 +17,6 @@ import java.util.List;
 
 import static net.corda.core.contracts.Structures.withoutIssuer;
 import static net.corda.finance.Currencies.SWISS_FRANCS;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 
 public class FlowSettleTests extends BaseTests {

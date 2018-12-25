@@ -1,6 +1,8 @@
-package ch.insurance.cordapp.token;
+package ch.insurance.cordapp.token.flows;
 
 import ch.insurance.cordapp.BaseFlow;
+import ch.insurance.cordapp.token.TokenContract;
+import ch.insurance.cordapp.token.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -23,7 +25,7 @@ import static net.corda.finance.contracts.GetBalances.getCashBalance;
 
 public class TokenSettlement {
 
-    /* Our flow, automating the process of updating the ledger.
+    /* Our flows, automating the process of updating the ledger.
      * See src/main/java/examples/ArtTransferFlowInitiator.java for an example. */
     @InitiatingFlow
     @StartableByRPC
@@ -64,7 +66,7 @@ public class TokenSettlement {
             final Party issuer = tokenInputState.getIssuer();
             final Party owner = tokenInputState.getOwner();
 
-            // Stage 3. Abort if not current owner started this flow.
+            // Stage 3. Abort if not current owner started this flows.
             if (!owner.equals(settlerOwner)) {
                 throw new FlowException("Token settling can only be initiated by the current owner.");
             }

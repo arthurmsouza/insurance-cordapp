@@ -1,4 +1,4 @@
-package ch.insurance.cordapp.token.flow;
+package ch.insurance.cordapp.token.flows;
 
 import ch.insurance.cordapp.BaseFlow;
 import ch.insurance.cordapp.token.TokenContract;
@@ -19,7 +19,7 @@ import java.util.Currency;
 
 public class TokenIssue {
 
-    /* Our flow, automating the process of updating the ledger.
+    /* Our flows, automating the process of updating the ledger.
      * See src/main/java/examples/ArtTransferFlowInitiator.java for an example. */
     @InitiatingFlow
     @StartableByRPC

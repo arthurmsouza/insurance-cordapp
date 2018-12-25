@@ -1,7 +1,7 @@
 package ch.insurance.cordapp.token.api;
 
 import ch.insurance.cordapp.token.TokenState;
-import ch.insurance.cordapp.token.flow.TokenIssue;
+import ch.insurance.cordapp.token.flows.TokenIssue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
@@ -77,15 +77,15 @@ public class TokenAPI {
     }
 
     /**
-     * Initiates a flow to agree an IOU between two parties.
+     * Initiates a flows to agree an IOU between two parties.
      *
-     * Once the flow finishes it will have written the IOU to ledger. Both the lender and the borrower will be able to
+     * Once the flows finishes it will have written the IOU to ledger. Both the lender and the borrower will be able to
      * see it when calling /api/example/ious on their respective nodes.
      *
      * This end-point takes a Party name parameter as part of the path. If the serving node can't find the other party
      * in its network map cache, it will return an HTTP bad request.
      *
-     * The flow is invoked asynchronously. It returns a future when the flow's call() method returns.
+     * The flows is invoked asynchronously. It returns a future when the flows's call() method returns.
      */
     @PUT
     @Path("tokens")

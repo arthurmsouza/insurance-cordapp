@@ -1,13 +1,13 @@
 package ch.insurance.cordapp.token;
 
-import ch.insurance.cordapp.token.flow.TokenIssue;
+import ch.insurance.cordapp.token.flows.TokenIssue;
+import ch.insurance.cordapp.token.flows.TokenTransfer;
 import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.FlowException;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import org.junit.Test;
