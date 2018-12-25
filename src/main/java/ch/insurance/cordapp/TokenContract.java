@@ -1,5 +1,6 @@
 package ch.insurance.cordapp;
 
+import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;

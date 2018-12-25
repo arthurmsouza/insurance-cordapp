@@ -1,15 +1,15 @@
-package ch.insurance.cordapp;
+package ch.insurance.cordapp.verifier;
 
+import ch.insurance.cordapp.BaseContract;
+import ch.insurance.cordapp.TokenState;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.transactions.LedgerTransaction;
 
 import java.util.List;
 
-/* Our contract, governing how our state will evolve over time.
- * See src/main/java/examples/ArtContract.java for an example. */
 public class TestVerifierContract extends BaseContract {
-    public static String ID = "ch.insurance.cordapp.TestVerifierContract";
+    public static String ID = "ch.insurance.cordapp.verifier.TestVerifierContract";
 
     public interface Commands extends CommandData {
         class TestIssueNormal implements Commands { }
@@ -24,12 +24,9 @@ public class TestVerifierContract extends BaseContract {
 	public void verify(LedgerTransaction tx) throws IllegalArgumentException {
         List<Command<Commands>> commands = tx.commandsOfType(Commands.class);
         if (commands.size() != 1) throw new IllegalArgumentException();
-
-        Command<Commands> command = commands.get(0);
         Commands commandData = commands.get(0).getValue();
 
         StateVerifier verifier = StateVerifier.fromTransaction(tx, Commands.class);
-
         if (commandData instanceof Commands.TestIssueNormal) {
             verifier.input().empty();
             verifier.output().one().one(TokenState.class).signer("issuer", x -> ((TokenState)x).getIssuer());

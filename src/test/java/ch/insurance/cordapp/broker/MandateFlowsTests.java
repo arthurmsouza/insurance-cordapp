@@ -1,6 +1,6 @@
 package ch.insurance.cordapp.broker;
 
-import ch.insurance.cordapp.StateVerifier;
+import ch.insurance.cordapp.verifier.StateVerifier;
 import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
 import ch.insurance.cordapp.broker.flows.MandateRequestFlow;
 import net.corda.core.concurrent.CordaFuture;
