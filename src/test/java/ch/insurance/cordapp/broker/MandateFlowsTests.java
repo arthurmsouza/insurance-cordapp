@@ -1,15 +1,20 @@
 package ch.insurance.cordapp.broker;
 
+import ch.insurance.cordapp.BaseFlow;
 import ch.insurance.cordapp.broker.MandateState.Line;
 import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
 import ch.insurance.cordapp.broker.flows.MandateAcceptFlow;
 import ch.insurance.cordapp.broker.flows.MandateRequestFlow;
 import ch.insurance.cordapp.broker.flows.MandateUpdateFlow;
+import ch.insurance.cordapp.broker.flows.MandateWithdrawFlow;
 import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.concurrent.CordaFuture;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.flows.FlowException;
 import net.corda.core.transactions.SignedTransaction;
+import org.crsh.cli.Man;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,6 +57,13 @@ public class MandateFlowsTests extends BaseTests {
     private SignedTransaction newUpdateFlow(UniqueIdentifier id, LineOfBusiness allowedBusiness, Instant startAt) throws ExecutionException, InterruptedException {
         MandateUpdateFlow.Initiator flow = new MandateUpdateFlow.Initiator(
                 id, allowedBusiness.makeImmutable(), startAt);
+        CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
+        network.runNetwork();
+        return future.get();
+    }
+
+    private SignedTransaction newWithdrawFlow(UniqueIdentifier id) throws ExecutionException, InterruptedException {
+        MandateWithdrawFlow.Initiator flow = new MandateWithdrawFlow.Initiator(id);
         CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
@@ -140,5 +152,23 @@ public class MandateFlowsTests extends BaseTests {
         assertTrue("mandate is updated and GL is NOT allowed", !newAllowance.contains(Line.GL));
     }
 
+    //@Test
+    public void withdraw_transaction_byclient() throws Exception {
+        SignedTransaction tx = this.newRequestFlow(LineOfBusiness.all());
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, this.ledgerServices);
+        MandateState mandate = verifier
+                .output().one()
+                .one(MandateState.class)
+                .object();
+
+        SignedTransaction atx = this.newWithdrawFlow(mandate.getId());
+
+        verifier = StateVerifier.fromTransaction(atx, this.ledgerServices);
+        verifier
+                .output().empty("no mandate found");
+
+        assertTrue("no mandate found with id",
+                this.flowHelper.getStateByLinearId(MandateState.class, mandate.getId()) == null);
+    }
 
 }

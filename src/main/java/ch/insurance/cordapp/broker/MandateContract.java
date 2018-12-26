@@ -147,7 +147,7 @@ public class MandateContract implements Contract {
     private void verifyDeny(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
             MandateState input = verifier
-                    .input().moreThanOne().one(MandateState.class)
+                    .input().one().one(MandateState.class)
                     .object();
             verifier
                     .output().empty();
@@ -160,7 +160,7 @@ public class MandateContract implements Contract {
     private void verifyWithdraw(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
             MandateState input = verifier
-                    .input().moreThanOne().one(MandateState.class)
+                    .input().one().one(MandateState.class)
                     .object();
             verifier
                     .output().empty();

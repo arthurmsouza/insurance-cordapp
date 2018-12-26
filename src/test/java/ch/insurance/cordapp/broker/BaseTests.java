@@ -1,6 +1,8 @@
 package ch.insurance.cordapp.broker;
 
+import ch.insurance.cordapp.FlowHelper;
 import com.google.common.collect.ImmutableList;
+import net.corda.core.contracts.ContractState;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.testing.core.TestIdentity;
@@ -26,6 +28,7 @@ abstract public class BaseTests {
     protected Party cesarTheInsurer;
 
     protected MockServices ledgerServices = null;
+    protected FlowHelper<? extends ContractState> flowHelper;
 
     // must be called to initialize using setup(true | false) and annotate with @Before
     public abstract void setup();
@@ -54,6 +57,7 @@ abstract public class BaseTests {
                 ImmutableList.of("ch.insurance.cordapp.broker"),
                 aliceID
         );
+        this.flowHelper = new FlowHelper(aliceTheCustomerNode.getServices());
 
     }
 
