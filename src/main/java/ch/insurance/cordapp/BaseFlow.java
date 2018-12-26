@@ -1,6 +1,7 @@
 package ch.insurance.cordapp;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import net.corda.confidential.IdentitySyncFlow;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.ContractState;
@@ -17,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.security.PublicKey;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class BaseFlow<T extends ContractState> extends FlowLogic<SignedTransaction> {
     public BaseFlow() {
@@ -24,22 +27,42 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
     }
 
 
-    @NotNull
-    protected TransactionBuilder getTransactionBuilder(Party issuer, ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
+    protected TransactionBuilder getTransactionBuilder(ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
         TransactionBuilder transactionBuilder = new TransactionBuilder();
         transactionBuilder.setNotary(getFirstNotary());
         transactionBuilder.addCommand(command, requiredSigner);
         return transactionBuilder;
     }
-    protected TransactionBuilder getTransactionBuilder(ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
-        return getTransactionBuilder(getOurIdentity(), requiredSigner, command);
-    }
     protected TransactionBuilder getMyTransactionBuilder(CommandData command) throws FlowException {
         return getTransactionBuilder(
-                getOurIdentity(),
                 ImmutableList.of(getOurIdentity().getOwningKey()),
                 command);
     }
+
+    protected SignedTransaction synchronizeCounterpartiesAndFinalize(Party me, Set<Party> counterparties, TransactionBuilder transactionBuilder) throws FlowException {
+        progressTracker.setCurrentStep(SIGNING);
+        transactionBuilder.verify(getServiceHub());
+
+        // We sign the transaction with our private key, making it immutable.
+        SignedTransaction signedTx = getServiceHub().signInitialTransaction(transactionBuilder);
+
+        // Send any keys and certificates so the signers can verify each other's identity
+        progressTracker.setCurrentStep(SYNCING);
+        Set<FlowSession> counterpartySessions = counterparties.stream().map(
+                party -> initiateFlow(party)).collect(Collectors.toSet());
+        // why IdentySyncFlow must be executed
+        // subFlow(new IdentitySyncFlow.Send(otherPartySessions, signedTx.getTx(), SYNCING.childProgressTracker()));
+
+        // Obtaining the counterparty's signature.
+        SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(
+                signedTx, counterpartySessions, CollectSignaturesFlow.tracker()));
+
+        // We get the transaction notarised and recorded automatically by the platform.
+        // send a copy to current issuer
+        progressTracker.setCurrentStep(FINALISING);
+        return subFlow(new FinalityFlow(fullySignedTx, ImmutableSet.of(me)));
+    }
+
 
     protected Party getFirstNotary() throws FlowException {
         List<Party> notaries = getServiceHub().getNetworkMapCache().getNotaryIdentities();

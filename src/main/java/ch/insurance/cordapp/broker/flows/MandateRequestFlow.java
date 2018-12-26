@@ -4,7 +4,6 @@ import ch.insurance.cordapp.BaseFlow;
 import ch.insurance.cordapp.broker.MandateContract;
 import ch.insurance.cordapp.broker.MandateState;
 import ch.insurance.cordapp.broker.MandateState.Line;
-import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
