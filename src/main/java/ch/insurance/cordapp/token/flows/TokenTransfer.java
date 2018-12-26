@@ -76,7 +76,7 @@ public class TokenTransfer {
                     .addAll(tokenInputState.getParticipantKeys())
                     .add(tokenOutputState.getOwner().getOwningKey()).build();
             // We build our transaction.
-            TransactionBuilder transactionBuilder = this.getTransactionBuilder(
+            TransactionBuilder transactionBuilder = this.getTransactionBuilderSignedBySigners(
                     requiredSigner,
                     new TokenContract.Commands.Transfer());
             transactionBuilder.setNotary(notary);

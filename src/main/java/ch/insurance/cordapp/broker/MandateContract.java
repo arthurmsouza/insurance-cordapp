@@ -16,6 +16,7 @@ public class MandateContract implements Contract {
     public interface Commands extends CommandData {
         class Request implements Commands { }
         class Update implements Commands { }
+        class Withdraw implements Commands { }
         class Accept implements Commands { }
         class Deny implements Commands { }
     }
@@ -26,12 +27,14 @@ public class MandateContract implements Contract {
         CommandData commandData = verifier.command();
         if (commandData instanceof MandateContract.Commands.Request) {
             verifyRequest(tx, verifier);
+        } else if (commandData instanceof MandateContract.Commands.Update) {
+            verifyUpdate(tx, verifier);
+        } else if (commandData instanceof MandateContract.Commands.Withdraw) {
+            verifyWithdraw(tx, verifier);
         } else if (commandData instanceof MandateContract.Commands.Accept) {
             verifyAccept(tx, verifier);
         } else if (commandData instanceof MandateContract.Commands.Deny) {
             verifyDeny(tx, verifier);
-        } else if (commandData instanceof MandateContract.Commands.Update) {
-            verifyUpdate(tx, verifier);
         }
     }
 
@@ -154,4 +157,18 @@ public class MandateContract implements Contract {
             return null;
         });
     }
+    private void verifyWithdraw(LedgerTransaction tx, StateVerifier verifier) {
+        requireThat(req -> {
+            MandateState input = verifier
+                    .input().moreThanOne().one(MandateState.class)
+                    .object();
+            verifier
+                    .output().empty();
+
+            // Checks the required parties have signed.
+            verifier.input().participantsAreSigner("Both owner and issuer together only must sign token state settle transaction");
+            return null;
+        });
+    }
+
 }

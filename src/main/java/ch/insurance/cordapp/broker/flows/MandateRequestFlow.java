@@ -5,14 +5,12 @@ import ch.insurance.cordapp.broker.MandateContract;
 import ch.insurance.cordapp.broker.MandateState;
 import ch.insurance.cordapp.broker.MandateState.Line;
 import co.paralleluniverse.fibers.Suspendable;
-import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
-import net.corda.core.utilities.ProgressTracker;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -34,11 +32,6 @@ public class MandateRequestFlow {
             this.allowedBusiness = allowedBusiness;
         }
 
-        @Override
-        public ProgressTracker getProgressTracker() {
-            return progressTracker;
-        }
-
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
@@ -58,25 +51,14 @@ public class MandateRequestFlow {
              * ===========================================================================*/
             // We build our transaction.
             progressTracker.setCurrentStep(BUILDING);
-            TransactionBuilder transactionBuilder = getMyTransactionBuilder(new MandateContract.Commands.Request());
+            TransactionBuilder transactionBuilder = getMyTransactionBuilderSignedByMe(new MandateContract.Commands.Request());
             transactionBuilder.addOutputState(mandate, MandateContract.ID);
 
             /* ============================================================================
              *          TODO 2 - Write our contract to control issuance!
              * ===========================================================================*/
             // We check our transaction is valid based on its contracts.
-            progressTracker.setCurrentStep(SIGNING);
-            transactionBuilder.verify(getServiceHub());
-
-            // We sign the transaction with our private key, making it immutable.
-            SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
-
-            // collecting does not exist
-            // progressTracker.setCurrentStep(COLLECTING);
-
-            // We get the transaction notarised and recorded automatically by the platform.
-            progressTracker.setCurrentStep(FINALISING);
-            return subFlow(new FinalityFlow(signedTransaction));
+            return synchronizeAndFinalize(transactionBuilder);
         }
 
     }

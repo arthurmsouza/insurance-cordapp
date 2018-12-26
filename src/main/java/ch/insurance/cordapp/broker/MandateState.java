@@ -201,6 +201,9 @@ public class MandateState implements LinearState {
         return new MandateState(
                 this.client, this.broker,this.startAt, this.expiredAt, allowedBusiness.makeImmutable(), false, this.getId());
     }
+    public MandateState updateAllowedBusiness(List<Line> allowedBusiness) {
+        return updateAllowedBusiness(new LineOfBusiness(allowedBusiness));
+    }
 
     public boolean isAccepted() {
         return accepted;

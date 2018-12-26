@@ -1,5 +1,6 @@
 package ch.insurance.cordapp;
 
+import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.confidential.IdentitySyncFlow;
@@ -8,15 +9,16 @@ import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
+import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import org.jetbrains.annotations.NotNull;
 
 import java.security.PublicKey;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,18 +29,42 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
     }
 
 
-    protected TransactionBuilder getTransactionBuilder(ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
+    protected TransactionBuilder getTransactionBuilderSignedBySigners(ImmutableList<PublicKey> requiredSigner, CommandData command) throws FlowException {
         TransactionBuilder transactionBuilder = new TransactionBuilder();
         transactionBuilder.setNotary(getFirstNotary());
         transactionBuilder.addCommand(command, requiredSigner);
         return transactionBuilder;
     }
-    protected TransactionBuilder getMyTransactionBuilder(CommandData command) throws FlowException {
-        return getTransactionBuilder(
+    protected TransactionBuilder getTransactionBuilderSignedByParticipants(ContractState state, CommandData command) throws FlowException {
+        List<PublicKey> publicKeys = state.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList());
+        ImmutableList<PublicKey> requiredSigner = new ImmutableList.Builder<PublicKey>()
+                .addAll(publicKeys)
+                .build();
+        return getTransactionBuilderSignedBySigners(requiredSigner, command);
+    }
+    protected TransactionBuilder getMyTransactionBuilderSignedByMe(CommandData command) throws FlowException {
+        return getTransactionBuilderSignedBySigners(
                 ImmutableList.of(getOurIdentity().getOwningKey()),
                 command);
     }
 
+    @Suspendable
+    protected SignedTransaction synchronizeAndFinalize(TransactionBuilder transactionBuilder) throws FlowException {
+        progressTracker.setCurrentStep(SIGNING);
+        transactionBuilder.verify(getServiceHub());
+
+        // We sign the transaction with our private key, making it immutable.
+        SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+
+        // collecting does not exist
+        // progressTracker.setCurrentStep(COLLECTING);
+
+        // We get the transaction notarised and recorded automatically by the platform.
+        progressTracker.setCurrentStep(FINALISING);
+        return subFlow(new FinalityFlow(signedTransaction));
+    }
+
+        @Suspendable
     protected SignedTransaction synchronizeCounterpartiesAndFinalize(Party me, Set<Party> counterparties, TransactionBuilder transactionBuilder) throws FlowException {
         progressTracker.setCurrentStep(SIGNING);
         transactionBuilder.verify(getServiceHub());
@@ -48,8 +74,12 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
 
         // Send any keys and certificates so the signers can verify each other's identity
         progressTracker.setCurrentStep(SYNCING);
-        Set<FlowSession> counterpartySessions = counterparties.stream().map(
-                party -> initiateFlow(party)).collect(Collectors.toSet());
+        Set<FlowSession> counterpartySessions = new HashSet<>();
+        for (Party p : counterparties) {
+            counterpartySessions.add(initiateFlow(p));
+        }
+        counterpartySessions = ImmutableSet.copyOf(counterpartySessions);
+
         // why IdentySyncFlow must be executed
         // subFlow(new IdentitySyncFlow.Send(otherPartySessions, signedTx.getTx(), SYNCING.childProgressTracker()));
 
@@ -62,6 +92,7 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
         progressTracker.setCurrentStep(FINALISING);
         return subFlow(new FinalityFlow(fullySignedTx, ImmutableSet.of(me)));
     }
+
 
 
     protected Party getFirstNotary() throws FlowException {

@@ -13,26 +13,25 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
-import java.time.temporal.TemporalUnit;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 
 
-public class MandateAcceptFlow {
+public class MandateUpdateFlow {
 
     @InitiatingFlow
     @StartableByRPC
     public static class Initiator extends BaseFlow<MandateState> {
 
         private final UniqueIdentifier id;
-        private final Instant startAt;
-        private final long amountDuration;
-        private final TemporalUnit unit;
+        private List<MandateState.Line> allowedBusiness;
+        private Instant startAt;
 
-        public Initiator(UniqueIdentifier id, Instant startAt, long amountDuration, TemporalUnit unit) {
+        public Initiator(UniqueIdentifier id, List<MandateState.Line> allowedBusiness, Instant startAt) {
             this.id = id;
+            this.allowedBusiness = allowedBusiness;
             this.startAt = startAt;
-            this.amountDuration = amountDuration;
-            this.unit = unit;
         }
 
         @Suspendable
@@ -48,8 +47,8 @@ public class MandateAcceptFlow {
             StateAndRef<MandateState> mandateToTransfer =  this.getStateByLinearId(MandateState.class, this.id);
             MandateState mandate = this.getStateByRef(mandateToTransfer);
 
-            if (!me.equals(mandate.getBroker())) {
-                throw new FlowException("Mandate can only be accepted by broker.");
+            if (!me.equals(mandate.getClient())) {
+                throw new FlowException("Mandate can only be updated by client.");
             }
 
             /* ============================================================================
@@ -57,18 +56,20 @@ public class MandateAcceptFlow {
              * ===========================================================================*/
             // We build our transaction.
             progressTracker.setCurrentStep(BUILDING);
-            MandateState acceptedMandate = mandate.accept(this.startAt, this.amountDuration, this.unit);
+            MandateState updatedMandate = mandate
+                    .updateAllowedBusiness(this.allowedBusiness)
+                    .updateTimestamps(this.startAt, 365, ChronoUnit.DAYS);
 
             TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
                     mandate,
-                    new MandateContract.Commands.Accept());
+                    new MandateContract.Commands.Update());
             transactionBuilder.addInputState(mandateToTransfer);
-            transactionBuilder.addOutputState(acceptedMandate, MandateContract.ID);
+            transactionBuilder.addOutputState(updatedMandate, MandateContract.ID);
 
             /* ============================================================================
              *          TODO 3 - Synchronize counterpart parties, send, sign and finalize!
              * ===========================================================================*/
-            Set<Party> counterparties = Sets.newHashSet(acceptedMandate.getClient());
+            Set<Party> counterparties = Sets.newHashSet(updatedMandate.getBroker());
             return synchronizeCounterpartiesAndFinalize(me, counterparties, transactionBuilder);
         }
 

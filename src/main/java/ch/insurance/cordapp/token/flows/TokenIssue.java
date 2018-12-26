@@ -58,7 +58,7 @@ public class TokenIssue {
              *      TODO 3 - Build our token issuance transaction to update the ledger!
              * ===========================================================================*/
             // We build our transaction.
-            TransactionBuilder transactionBuilder = getMyTransactionBuilder(new TokenContract.Commands.Issue());
+            TransactionBuilder transactionBuilder = getMyTransactionBuilderSignedByMe(new TokenContract.Commands.Issue());
             transactionBuilder.addOutputState(tokenState, TokenContract.ID);
 
             /* ============================================================================

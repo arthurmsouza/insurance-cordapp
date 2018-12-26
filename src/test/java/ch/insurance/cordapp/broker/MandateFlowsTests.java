@@ -1,19 +1,22 @@
 package ch.insurance.cordapp.broker;
 
-import ch.insurance.cordapp.broker.flows.MandateAcceptFlow;
-import ch.insurance.cordapp.verifier.StateVerifier;
+import ch.insurance.cordapp.broker.MandateState.Line;
 import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
+import ch.insurance.cordapp.broker.flows.MandateAcceptFlow;
 import ch.insurance.cordapp.broker.flows.MandateRequestFlow;
+import ch.insurance.cordapp.broker.flows.MandateUpdateFlow;
+import ch.insurance.cordapp.verifier.StateVerifier;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.TimeWindow;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.transactions.SignedTransaction;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.concurrent.ExecutionException;
@@ -41,11 +44,20 @@ public class MandateFlowsTests extends BaseTests {
 
     private SignedTransaction newAcceptFlow(UniqueIdentifier id, Instant startAt, long amountDuration, TemporalUnit unit) throws ExecutionException, InterruptedException {
         MandateAcceptFlow.Initiator flow = new MandateAcceptFlow.Initiator(
-            id, startAt, amountDuration, unit);
+                id, startAt, amountDuration, unit);
         CordaFuture<SignedTransaction> future = bobTheBrokerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
     }
+    private SignedTransaction newUpdateFlow(UniqueIdentifier id, LineOfBusiness allowedBusiness, Instant startAt) throws ExecutionException, InterruptedException {
+        MandateUpdateFlow.Initiator flow = new MandateUpdateFlow.Initiator(
+                id, allowedBusiness.makeImmutable(), startAt);
+        CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
+        network.runNetwork();
+        return future.get();
+    }
+
+
 
     @Test
     public void request_transaction_ConstructedByFlowUsesTheCorrectNotary() throws Exception {
@@ -90,9 +102,43 @@ public class MandateFlowsTests extends BaseTests {
                 .output().one().one(MandateState.class)
                 .object();
 
-        assertTrue("mandate is update and accepted", acceptedMandate.isAccepted());
+        assertTrue("mandate is updated and accepted", acceptedMandate.isAccepted());
         assertEquals("days between start + end is 365", 365,
                 ChronoUnit.DAYS.between(acceptedMandate.getStartAt(), acceptedMandate.getExpiredAt()));
     }
+
+
+    private LocalDate get1stDayOfNextMonth() {
+        YearMonth yearMonth = YearMonth.from(Instant.now().atZone(ZoneId.systemDefault()));
+        return yearMonth.atEndOfMonth().plus(1, ChronoUnit.DAYS);
+    }
+    private Instant get1stDayOfNextMonth_Instant() {
+        return this.get1stDayOfNextMonth().atStartOfDay(ZoneId.systemDefault()).toInstant();
+    }
+    @Test
+    public void update_transaction_byclient() throws Exception {
+        SignedTransaction tx = this.newRequestFlow(LineOfBusiness.all());
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, this.ledgerServices);
+        MandateState mandate = verifier
+                .output().one()
+                .one(MandateState.class)
+                .object();
+
+        Instant startAt = get1stDayOfNextMonth_Instant();
+        SignedTransaction atx = this.newUpdateFlow(
+                mandate.getId(), new LineOfBusiness().PnC().Health(), startAt);
+        verifier = StateVerifier.fromTransaction(atx, this.ledgerServices);
+        MandateState updatedMandate = verifier
+                .output().one().one(MandateState.class)
+                .object();
+
+        LineOfBusiness newAllowance = new LineOfBusiness(updatedMandate.getAllowedBusiness());
+        assertTrue("mandate is updated and PnC is allowed", newAllowance.contains(Line.PnC));
+        assertTrue("mandate is updated and Health is allowed", newAllowance.contains(Line.Health));
+
+        assertTrue("mandate is updated and IL is NOT allowed", !newAllowance.contains(Line.IL));
+        assertTrue("mandate is updated and GL is NOT allowed", !newAllowance.contains(Line.GL));
+    }
+
 
 }
