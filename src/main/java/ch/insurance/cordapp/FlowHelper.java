@@ -20,16 +20,16 @@ public class FlowHelper<T extends ContractState> {
         this.serviceHub = serviceHub;
     }
 
-    public StateAndRef<T> getStateByLinearId(Class stateClass, UniqueIdentifier linearId) throws FlowException {
+    public StateAndRef<T> getStateByLinearId(Class stateClass, UniqueIdentifier linearId) {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
                 null,
                 ImmutableList.of(linearId),
-                Vault.StateStatus.UNCONSUMED,
+                Vault.StateStatus.ALL,
                 null);
 
         List<StateAndRef<T>> data = this.serviceHub.getVaultService().queryBy(
                 stateClass, queryCriteria).getStates();
-        return data != null && data.size() > 0 ? data.get(0) : null;
+        return data != null && data.size() > 0 ? data.get(data.size()-1) : null;
     }
 
 

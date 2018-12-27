@@ -28,7 +28,6 @@ abstract public class BaseTests {
     protected Party cesarTheInsurer;
 
     protected MockServices ledgerServices = null;
-    protected FlowHelper<? extends ContractState> flowHelper;
 
     // must be called to initialize using setup(true | false) and annotate with @Before
     public abstract void setup();
@@ -54,10 +53,9 @@ abstract public class BaseTests {
 
 
         ledgerServices = new MockServices(
-                ImmutableList.of("ch.insurance.cordapp.broker"),
+                ImmutableList.of("ch.insurance.cordapp"),
                 aliceID
         );
-        this.flowHelper = new FlowHelper(aliceTheCustomerNode.getServices());
 
     }
 

@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MandateState implements LinearState {
     private final Party client;
@@ -21,7 +22,8 @@ public class MandateState implements LinearState {
     private final Instant startAt;
     private final Instant expiredAt;
     private final List<Line> allowedBusiness;
-    private final boolean accepted;
+
+    private final Phase phase;
     private final UniqueIdentifier id;
 
     public static class LineOfBusiness extends HashSet<Line> {
@@ -74,17 +76,25 @@ public class MandateState implements LinearState {
     }
 
 
+    @CordaSerializable
+    public enum Phase {
+        REQUESTED,
+        WITHDRAWN,
+        ACCEPTED,
+        DENIED;
+    }
+
     @ConstructorForDeserialization
     public MandateState(@NotNull Party client, @NotNull Party broker, @NotNull Instant startAt,
                         @NotNull Instant expiredAt,
                         @NotNull List<Line> allowedBusiness,
-                        boolean accepted, @NotNull UniqueIdentifier id) {
+                        Phase phase, @NotNull UniqueIdentifier id) {
         this.client = client;
         this.broker = broker;
         this.startAt = startAt;
         this.expiredAt = expiredAt;
         this.allowedBusiness = allowedBusiness;
-        this.accepted = accepted;
+        this.phase = phase;
         this.id = id;
     }
 
@@ -96,7 +106,7 @@ public class MandateState implements LinearState {
         this.startAt = startAt;
         this.expiredAt = expiredAt;
         this.allowedBusiness = allowedBusiness;
-        this.accepted = false;
+        this.phase = Phase.REQUESTED;
         this.id = new UniqueIdentifier();
     }
 
@@ -107,7 +117,7 @@ public class MandateState implements LinearState {
         this.startAt = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
         this.expiredAt = this.startAt.plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
         this.allowedBusiness = allowedBusiness;
-        this.accepted = false;
+        this.phase = Phase.REQUESTED;
         this.id = new UniqueIdentifier();
     }
     public MandateState(@NotNull Party client, @NotNull Party broker) {
@@ -183,29 +193,50 @@ public class MandateState implements LinearState {
 
     public MandateState accept() {
         return new MandateState(
-                this.client, this.broker,this.startAt, this.expiredAt, this.allowedBusiness, true, this.getId());
+                this.client, this.broker,this.startAt, this.expiredAt, this.allowedBusiness, Phase.ACCEPTED, this.getId());
+    }
+    public MandateState deny() {
+        return new MandateState(
+                this.client, this.broker,this.startAt, this.expiredAt, this.allowedBusiness, Phase.DENIED, this.getId());
+    }
+    public MandateState withdraw() {
+        return new MandateState(
+                this.client, this.broker,this.startAt, this.expiredAt, this.allowedBusiness, Phase.WITHDRAWN, this.getId());
     }
 
     public MandateState accept(Instant startAt, long amountDuration, TemporalUnit unit) {
         Instant newExpired = startAt.plus(amountDuration, unit);
         return new MandateState(
-                this.client, this.broker,startAt, newExpired, this.allowedBusiness, true, this.getId());
+                this.client, this.broker,startAt, newExpired, this.allowedBusiness, Phase.ACCEPTED, this.getId());
     }
 
     public MandateState updateTimestamps(Instant startAt, long amountDuration, TemporalUnit unit) {
         Instant newExpired = startAt.plus(amountDuration, unit);
         return new MandateState(
-                this.client, this.broker,startAt, newExpired, this.allowedBusiness, false, this.getId());
+                this.client, this.broker,startAt, newExpired, this.allowedBusiness, this.phase, this.getId());
     }
     public MandateState updateAllowedBusiness(LineOfBusiness allowedBusiness) {
         return new MandateState(
-                this.client, this.broker,this.startAt, this.expiredAt, allowedBusiness.makeImmutable(), false, this.getId());
+                this.client, this.broker,this.startAt, this.expiredAt, allowedBusiness.makeImmutable(), this.phase, this.getId());
     }
     public MandateState updateAllowedBusiness(List<Line> allowedBusiness) {
         return updateAllowedBusiness(new LineOfBusiness(allowedBusiness));
     }
 
-    public boolean isAccepted() {
-        return accepted;
+    public boolean isAccepted() { return this.phase == Phase.ACCEPTED; }
+    public boolean isDenied() { return this.phase == Phase.DENIED; }
+    public boolean isRequested() {
+        return this.phase == Phase.REQUESTED;
     }
+    public boolean isWithdrawn() {
+        return this.phase == Phase.WITHDRAWN;
+    }
+
+    public boolean canBeUpdated() {
+        return this.phase == Phase.REQUESTED;
+    }
+
+    public Phase getPhase() { return phase; }
+
+
 }

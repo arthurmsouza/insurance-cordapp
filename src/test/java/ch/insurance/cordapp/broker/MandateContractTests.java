@@ -281,4 +281,114 @@ public class MandateContractTests extends BaseTests {
     }
 
 
+    @Test
+    public void mandate_denied() {
+        transaction(ledgerServices, tx -> {
+            MandateState accept = newMandate().accept();
+            tx.input(MandateContract.ID, accept);
+            tx.output(MandateContract.ID, accept);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.failsWith("mandate cannot be accepted");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState withdraw = newMandate().withdraw();
+            tx.input(MandateContract.ID, withdraw);
+            tx.output(MandateContract.ID, withdraw);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.failsWith("mandate cannot be withdrawn");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState deny = newMandate().deny();
+            tx.input(MandateContract.ID, deny);
+            tx.output(MandateContract.ID, deny);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.failsWith("mandate cannot be denied");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState requested = newMandate();
+            tx.input(MandateContract.ID, requested);
+            tx.output(MandateContract.ID, requested.deny());
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.verifies();
+            return null;
+        });
+    }
+
+
+    @Test
+    public void mandate_accepted() {
+        transaction(ledgerServices, tx -> {
+            MandateState accept = newMandate().accept();
+            tx.input(MandateContract.ID, accept);
+            tx.output(MandateContract.ID, accept);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.failsWith("mandate cannot be accepted");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState withdraw = newMandate().withdraw();
+            tx.input(MandateContract.ID, withdraw);
+            tx.output(MandateContract.ID, withdraw);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.failsWith("mandate cannot be withdrawn");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState deny = newMandate().deny();
+            tx.input(MandateContract.ID, deny);
+            tx.output(MandateContract.ID, deny);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.failsWith("mandate cannot be denied");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState requested = newMandate();
+            tx.input(MandateContract.ID, requested);
+            tx.output(MandateContract.ID, requested.accept());
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.verifies();
+            return null;
+        });
+    }
+
+
+    @Test
+    public void mandate_withdraw() {
+        transaction(ledgerServices, tx -> {
+            MandateState accept = newMandate().accept();
+            tx.input(MandateContract.ID, accept);
+            tx.output(MandateContract.ID, accept);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.failsWith("mandate cannot be accepted");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState withdraw = newMandate().withdraw();
+            tx.input(MandateContract.ID, withdraw);
+            tx.output(MandateContract.ID, withdraw);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.failsWith("mandate cannot be withdrawn");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState deny = newMandate().deny();
+            tx.input(MandateContract.ID, deny);
+            tx.output(MandateContract.ID, deny);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.failsWith("mandate cannot be denied");
+            return null;
+        });
+        transaction(ledgerServices, tx -> {
+            MandateState requested = newMandate();
+            tx.input(MandateContract.ID, requested);
+            tx.output(MandateContract.ID, requested.withdraw());
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.verifies();
+            return null;
+        });
+    }
+
 }

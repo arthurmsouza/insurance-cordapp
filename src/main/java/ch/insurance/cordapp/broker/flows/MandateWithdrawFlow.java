@@ -52,11 +52,13 @@ public class MandateWithdrawFlow {
              * ===========================================================================*/
             // We build our transaction.
             progressTracker.setCurrentStep(BUILDING);
+            MandateState withdrawnMandate = mandate.withdraw();
 
             TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
                     mandate,
                     new MandateContract.Commands.Withdraw());
             transactionBuilder.addInputState(mandateToTransfer);
+            transactionBuilder.addOutputState(withdrawnMandate, MandateContract.ID);
 
             /* ============================================================================
              *          TODO 3 - Synchronize counterpart parties, send, sign and finalize!
@@ -64,15 +66,6 @@ public class MandateWithdrawFlow {
             Set<Party> counterparties = Sets.newHashSet(mandate.getBroker());
             return synchronizeCounterpartiesAndFinalize(me, counterparties, transactionBuilder);
         }
-
-        public StateAndRef<MandateState> getMandateById(UniqueIdentifier id) {
-            try {
-                return this.getStateByLinearId(MandateState.class, id);
-            } catch (FlowException e) {
-                return null;
-            }
-        }
-
 
     }
 

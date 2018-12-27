@@ -48,8 +48,8 @@ public class MandateContract implements Contract {
                             "broker", p2 -> ((MandateState)p2).getBroker())
                     .signer("client must be the signer", state -> ((MandateState)state).getClient())
                     .object();
-            req.using("mandate must be not accepted",
-                    !mandate.isAccepted());
+            req.using("mandate is just requested",
+                    mandate.isRequested());
             this.verifyAllowances(mandate);
             this.verifyTimestamps(mandate);
             return null;
@@ -114,8 +114,8 @@ public class MandateContract implements Contract {
             MandateState output = verifier
                     .output().one().one(MandateState.class)
                     .object();
-            req.using("mandate is still not accepted",
-                    !output.isAccepted());
+            req.using("mandate is still beeing able to update",
+                    output.canBeUpdated());
             this.verifyInputOnUpdate(input);
             this.verifyAllowances(output);
             this.verifyTimestamps(output);
@@ -134,7 +134,9 @@ public class MandateContract implements Contract {
             MandateState output = verifier
                     .output().one().one(MandateState.class)
                     .object();
-            req.using("mandate must be accepted",
+            req.using("input mandate must be REQUESTED",
+                    input.isRequested());
+            req.using("mandate must be ACCEPTED",
                     output.isAccepted());
             this.verifyInputOnUpdate(input);
             this.verifyAllowances(output);
@@ -146,14 +148,22 @@ public class MandateContract implements Contract {
     }
     private void verifyDeny(LedgerTransaction tx, StateVerifier verifier) {
         requireThat(req -> {
+
             MandateState input = verifier
                     .input().one().one(MandateState.class)
+                    .participantsAreSigner("all participants must be signer")
                     .object();
-            verifier
-                    .output().empty();
-
-            // Checks the required parties have signed.
-            verifier.input().participantsAreSigner("Both owner and issuer together only must sign token state settle transaction");
+            MandateState output = verifier
+                    .output().one().one(MandateState.class)
+                    .object();
+            req.using("input mandate must be REQUESTED / ACCEPTED",
+                    input.isRequested() && input.isAccepted());
+            req.using("mandate must be DENIED",
+                    output.isDenied());
+            this.verifyInputOnUpdate(input);
+            this.verifyAllowances(output);
+            this.verifyTimestamps(output);
+            this.verifySameValues(input, output);
             return null;
         });
     }
@@ -161,12 +171,19 @@ public class MandateContract implements Contract {
         requireThat(req -> {
             MandateState input = verifier
                     .input().one().one(MandateState.class)
+                    .participantsAreSigner("all participants must be signer")
                     .object();
-            verifier
-                    .output().empty();
-
-            // Checks the required parties have signed.
-            verifier.input().participantsAreSigner("Both owner and issuer together only must sign token state settle transaction");
+            MandateState output = verifier
+                    .output().one().one(MandateState.class)
+                    .object();
+            req.using("input mandate must be REQUESTED",
+                    input.isRequested());
+            req.using("mandate must be WITHDRAWN",
+                    output.isWithdrawn());
+            this.verifyInputOnUpdate(input);
+            this.verifyAllowances(output);
+            this.verifyTimestamps(output);
+            this.verifySameValues(input, output);
             return null;
         });
     }

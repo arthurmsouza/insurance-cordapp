@@ -1,6 +1,7 @@
 package ch.insurance.cordapp.broker;
 
 import ch.insurance.cordapp.BaseFlow;
+import ch.insurance.cordapp.FlowHelper;
 import ch.insurance.cordapp.broker.MandateState.Line;
 import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
 import ch.insurance.cordapp.broker.flows.MandateAcceptFlow;
@@ -8,13 +9,19 @@ import ch.insurance.cordapp.broker.flows.MandateRequestFlow;
 import ch.insurance.cordapp.broker.flows.MandateUpdateFlow;
 import ch.insurance.cordapp.broker.flows.MandateWithdrawFlow;
 import ch.insurance.cordapp.verifier.StateVerifier;
+import kotlin.Unit;
 import net.corda.core.concurrent.CordaFuture;
+import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.testing.node.NodeTestUtils;
 import org.crsh.cli.Man;
+import org.intellij.lang.annotations.Flow;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +31,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -99,7 +107,7 @@ public class MandateFlowsTests extends BaseTests {
     @Test
     public void accept_transaction_updateAndAccept() throws Exception {
         SignedTransaction tx = this.newRequestFlow(LineOfBusiness.all());
-        StateVerifier verifier = StateVerifier.fromTransaction(tx, this.ledgerServices);
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, aliceTheCustomerNode.getServices());
         MandateState mandate = verifier
                 .output().one()
                 .one(MandateState.class)
@@ -109,7 +117,7 @@ public class MandateFlowsTests extends BaseTests {
         SignedTransaction atx = this.newAcceptFlow(
                 mandate.getId(), Instant.now().plus(10, ChronoUnit.DAYS),
                 365, ChronoUnit.DAYS);
-        verifier = StateVerifier.fromTransaction(atx, this.ledgerServices);
+        verifier = StateVerifier.fromTransaction(atx, bobTheBrokerNode.getServices());
         MandateState acceptedMandate = verifier
                 .output().one().one(MandateState.class)
                 .object();
@@ -152,23 +160,30 @@ public class MandateFlowsTests extends BaseTests {
         assertTrue("mandate is updated and GL is NOT allowed", !newAllowance.contains(Line.GL));
     }
 
-    //@Test
+    @Test
     public void withdraw_transaction_byclient() throws Exception {
-        SignedTransaction tx = this.newRequestFlow(LineOfBusiness.all());
-        StateVerifier verifier = StateVerifier.fromTransaction(tx, this.ledgerServices);
+        SignedTransaction stx = this.newRequestFlow(LineOfBusiness.all());
+        StateVerifier verifier = StateVerifier.fromTransaction(stx, aliceTheCustomerNode.getServices());
         MandateState mandate = verifier
                 .output().one()
                 .one(MandateState.class)
                 .object();
 
-        SignedTransaction atx = this.newWithdrawFlow(mandate.getId());
+        SignedTransaction wtx = this.newWithdrawFlow(mandate.getId());
 
-        verifier = StateVerifier.fromTransaction(atx, this.ledgerServices);
-        verifier
-                .output().empty("no mandate found");
+        verifier = StateVerifier.fromTransaction(wtx, aliceTheCustomerNode.getServices());
+        MandateState withdrawnMandate = verifier
+                .output().one().one(MandateState.class)
+                .object();
 
-        assertTrue("no mandate found with id",
-                this.flowHelper.getStateByLinearId(MandateState.class, mandate.getId()) == null);
+        FlowHelper<MandateState> flowHelper = new FlowHelper<>(aliceTheCustomerNode.getServices());
+        StateAndRef<MandateState> mandateState = aliceTheCustomerNode.transaction(() -> {
+            return flowHelper.getStateByLinearId(MandateState.class, mandate.getId());
+        });
+
+        assertTrue("mandate found and must be WITHDRAWN",
+                mandateState.getState().getData().isWithdrawn());
+
     }
 
 }
