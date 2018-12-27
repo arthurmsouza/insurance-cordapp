@@ -1,27 +1,15 @@
 package ch.insurance.cordapp.broker;
 
-import ch.insurance.cordapp.BaseFlow;
 import ch.insurance.cordapp.FlowHelper;
 import ch.insurance.cordapp.broker.MandateState.Line;
 import ch.insurance.cordapp.broker.MandateState.LineOfBusiness;
-import ch.insurance.cordapp.broker.flows.MandateAcceptFlow;
-import ch.insurance.cordapp.broker.flows.MandateRequestFlow;
-import ch.insurance.cordapp.broker.flows.MandateUpdateFlow;
-import ch.insurance.cordapp.broker.flows.MandateWithdrawFlow;
+import ch.insurance.cordapp.broker.flows.*;
 import ch.insurance.cordapp.verifier.StateVerifier;
-import kotlin.Unit;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.FlowException;
-import net.corda.core.node.services.Vault;
-import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.testing.node.NodeTestUtils;
-import org.crsh.cli.Man;
-import org.intellij.lang.annotations.Flow;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,7 +19,6 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -58,6 +45,12 @@ public class MandateFlowsTests extends BaseTests {
     private SignedTransaction newAcceptFlow(UniqueIdentifier id, Instant startAt, long amountDuration, TemporalUnit unit) throws ExecutionException, InterruptedException {
         MandateAcceptFlow.Initiator flow = new MandateAcceptFlow.Initiator(
                 id, startAt, amountDuration, unit);
+        CordaFuture<SignedTransaction> future = bobTheBrokerNode.startFlow(flow);
+        network.runNetwork();
+        return future.get();
+    }
+    private SignedTransaction newDenyFlow(UniqueIdentifier id) throws ExecutionException, InterruptedException {
+        MandateDenyFlow.Initiator flow = new MandateDenyFlow.Initiator(id);
         CordaFuture<SignedTransaction> future = bobTheBrokerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
@@ -128,6 +121,27 @@ public class MandateFlowsTests extends BaseTests {
     }
 
 
+    @Test
+    public void deny_transaction_updateAndAccept() throws Exception {
+        SignedTransaction tx = this.newRequestFlow(LineOfBusiness.all());
+        StateVerifier verifier = StateVerifier.fromTransaction(tx, aliceTheCustomerNode.getServices());
+        MandateState mandate = verifier
+                .output().one()
+                .one(MandateState.class)
+                .object();
+
+        SignedTransaction dtx = this.newDenyFlow(mandate.getId());
+        verifier = StateVerifier.fromTransaction(dtx, bobTheBrokerNode.getServices());
+        MandateState deniedMandate = verifier
+                .output().one().one(MandateState.class)
+                .object();
+
+        assertTrue("mandate is updated and denied", deniedMandate.isDenied());
+        assertEquals("days between start + end is 365", 365,
+                ChronoUnit.DAYS.between(deniedMandate.getStartAt(), deniedMandate.getExpiredAt()));
+    }
+
+
     private LocalDate get1stDayOfNextMonth() {
         YearMonth yearMonth = YearMonth.from(Instant.now().atZone(ZoneId.systemDefault()));
         return yearMonth.atEndOfMonth().plus(1, ChronoUnit.DAYS);
@@ -178,7 +192,7 @@ public class MandateFlowsTests extends BaseTests {
 
         FlowHelper<MandateState> flowHelper = new FlowHelper<>(aliceTheCustomerNode.getServices());
         StateAndRef<MandateState> mandateState = aliceTheCustomerNode.transaction(() -> {
-            return flowHelper.getStateByLinearId(MandateState.class, mandate.getId());
+            return flowHelper.getLastStateByLinearId(MandateState.class, mandate.getId());
         });
 
         assertTrue("mandate found and must be WITHDRAWN",

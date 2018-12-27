@@ -11,7 +11,10 @@ import net.corda.testing.node.MockServices;
 import net.corda.testing.node.StartedMockNode;
 import org.junit.After;
 
+import java.security.PublicKey;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 abstract public class BaseTests {
     protected final Instant start = Instant.now();
@@ -64,6 +67,11 @@ abstract public class BaseTests {
         if (network != null) network.stopNodes();
     }
 
+
+    protected List<PublicKey> getPublicKeys(Party... parties) {
+        ImmutableList<Party> list = ImmutableList.copyOf(parties);
+        return list.stream().map(party -> party.getOwningKey()).collect(Collectors.toList());
+    }
 
     protected Party getParty(StartedMockNode node) {
         return node.getInfo().getLegalIdentities().get(0);

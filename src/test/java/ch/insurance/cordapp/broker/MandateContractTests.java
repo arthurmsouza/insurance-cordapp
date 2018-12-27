@@ -77,7 +77,7 @@ public class MandateContractTests extends BaseTests {
             state = state.accept();
             tx.output(MandateContract.ID, state);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
-            tx.failsWith("mandate must be not accepted");
+            tx.failsWith("mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
@@ -284,34 +284,36 @@ public class MandateContractTests extends BaseTests {
     @Test
     public void mandate_denied() {
         transaction(ledgerServices, tx -> {
-            MandateState accept = newMandate().accept();
-            tx.input(MandateContract.ID, accept);
-            tx.output(MandateContract.ID, accept);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
-            tx.failsWith("mandate cannot be accepted");
-            return null;
-        });
-        transaction(ledgerServices, tx -> {
             MandateState withdraw = newMandate().withdraw();
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
-            tx.failsWith("mandate cannot be withdrawn");
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.failsWith("input mandate must be REQUESTED / ACCEPTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState deny = newMandate().deny();
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
-            tx.failsWith("mandate cannot be denied");
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.failsWith("input mandate must be REQUESTED / ACCEPTED");
             return null;
         });
+
+        transaction(ledgerServices, tx -> {
+            MandateState accept = newMandate().accept();
+            tx.input(MandateContract.ID, accept);
+            tx.output(MandateContract.ID, accept.deny());
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.verifies();
+            return null;
+        });
+
         transaction(ledgerServices, tx -> {
             MandateState requested = newMandate();
             tx.input(MandateContract.ID, requested);
             tx.output(MandateContract.ID, requested.deny());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
             tx.verifies();
             return null;
         });
@@ -324,31 +326,31 @@ public class MandateContractTests extends BaseTests {
             MandateState accept = newMandate().accept();
             tx.input(MandateContract.ID, accept);
             tx.output(MandateContract.ID, accept);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
-            tx.failsWith("mandate cannot be accepted");
+            tx.command(this.getPublicKeys(bobTheBroker, aliceTheCustomer), new MandateContract.Commands.Accept());
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState withdraw = newMandate().withdraw();
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
-            tx.failsWith("mandate cannot be withdrawn");
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState deny = newMandate().deny();
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
-            tx.failsWith("mandate cannot be denied");
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState requested = newMandate();
             tx.input(MandateContract.ID, requested);
             tx.output(MandateContract.ID, requested.accept());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
             tx.verifies();
             return null;
         });
@@ -362,7 +364,7 @@ public class MandateContractTests extends BaseTests {
             tx.input(MandateContract.ID, accept);
             tx.output(MandateContract.ID, accept);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
-            tx.failsWith("mandate cannot be accepted");
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
@@ -370,7 +372,7 @@ public class MandateContractTests extends BaseTests {
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
-            tx.failsWith("mandate cannot be withdrawn");
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
@@ -378,7 +380,7 @@ public class MandateContractTests extends BaseTests {
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
-            tx.failsWith("mandate cannot be denied");
+            tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
