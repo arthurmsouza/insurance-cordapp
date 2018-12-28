@@ -94,7 +94,7 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
     }
 
 
-
+    @Suspendable
     protected Party getFirstNotary() throws FlowException {
         List<Party> notaries = getServiceHub().getNetworkMapCache().getNotaryIdentities();
         if (notaries.isEmpty()) {
@@ -102,7 +102,7 @@ public abstract class BaseFlow<T extends ContractState> extends FlowLogic<Signed
         }
         return notaries.get(0);
     }
-
+    @Suspendable
     protected StateAndRef<T> getStateByLinearId(Class stateClass, UniqueIdentifier linearId) throws FlowException {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
                 null,

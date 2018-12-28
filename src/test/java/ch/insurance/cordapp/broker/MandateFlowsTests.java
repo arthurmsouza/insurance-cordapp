@@ -36,7 +36,7 @@ public class MandateFlowsTests extends BaseTests {
         MandateRequestFlow.Initiator flow = new MandateRequestFlow.Initiator(
                 bobTheBrokerNode.getInfo().getLegalIdentities().get(0),
                 Instant.now().plus(10, ChronoUnit.DAYS),
-                allowedBusines.makeImmutable());
+                allowedBusines.toEnumSet());
         CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
@@ -57,7 +57,7 @@ public class MandateFlowsTests extends BaseTests {
     }
     private SignedTransaction newUpdateFlow(UniqueIdentifier id, LineOfBusiness allowedBusiness, Instant startAt) throws ExecutionException, InterruptedException {
         MandateUpdateFlow.Initiator flow = new MandateUpdateFlow.Initiator(
-                id, allowedBusiness.makeImmutable(), startAt);
+                id, allowedBusiness.toEnumSet(), startAt);
         CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
         network.runNetwork();
         return future.get();

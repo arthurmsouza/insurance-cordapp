@@ -14,7 +14,7 @@ import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+import java.util.EnumSet;
 
 
 public class MandateRequestFlow {
@@ -24,9 +24,9 @@ public class MandateRequestFlow {
     public static class Initiator extends BaseFlow<MandateState> {
         private final Party broker;
         private final Instant startAt;
-        private final List<Line> allowedBusiness;
+        private final EnumSet<Line> allowedBusiness;
 
-        public Initiator(Party broker, Instant startAt, List<Line> allowedBusiness) {
+        public Initiator(Party broker, Instant startAt, EnumSet<Line> allowedBusiness) {
             this.broker = broker;
             this.startAt = startAt;
             this.allowedBusiness = allowedBusiness;

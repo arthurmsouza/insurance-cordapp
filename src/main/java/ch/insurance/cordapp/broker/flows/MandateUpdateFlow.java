@@ -14,8 +14,11 @@ import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+
+import static ch.insurance.cordapp.broker.MandateState.*;
 
 
 public class MandateUpdateFlow {
@@ -25,10 +28,10 @@ public class MandateUpdateFlow {
     public static class Initiator extends BaseFlow<MandateState> {
 
         private final UniqueIdentifier id;
-        private List<MandateState.Line> allowedBusiness;
+        private EnumSet<Line> allowedBusiness;
         private Instant startAt;
 
-        public Initiator(UniqueIdentifier id, List<MandateState.Line> allowedBusiness, Instant startAt) {
+        public Initiator(UniqueIdentifier id, EnumSet<Line> allowedBusiness, Instant startAt) {
             this.id = id;
             this.allowedBusiness = allowedBusiness;
             this.startAt = startAt;

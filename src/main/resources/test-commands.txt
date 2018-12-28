@@ -1,10 +1,21 @@
-flow start TokenIssueFlow owner: PartyB, amount: 99
+tokens
+------------------------------
+flow start TokenIssueFlow owner: PartyB, amount: 99 CHF
 
-flow start TokenTransferFlow newOwner: PartyC, id: <id>
+flow start TokenTransferFlow newOwner: PartyC, id: 764342c4-ca98-487c-a6a1-9b606e1b03b8
 
+
+broker / mandate
+------------------------------
+
+flow start MandateRequestFlow broker: PartyB, startAt: "2019-01-01T00:00:00Z", allowedBusiness: [ "PnC" ]
+flow start MandateRequestFlow broker: PartyB, startAt: "2019-01-01T00:00:00Z", allowedBusiness: [ PnC ]
 
 
 show all transactions
 ------------------------------
 
 run vaultQuery contractStateType: ch.insurance.cordapp.token.TokenState
+run vaultQuery contractStateType: ch.insurance.cordapp.broker.MandateState
+
+
