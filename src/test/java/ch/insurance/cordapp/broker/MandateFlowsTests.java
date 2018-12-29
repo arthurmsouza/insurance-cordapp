@@ -36,15 +36,15 @@ public class MandateFlowsTests extends BaseTests {
         MandateRequestFlow.Initiator flow = new MandateRequestFlow.Initiator(
                 bobTheBrokerNode.getInfo().getLegalIdentities().get(0),
                 Instant.now().plus(10, ChronoUnit.DAYS),
-                allowedBusines.toEnumSet());
+                allowedBusines.toList());
         CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
     }
 
-    private SignedTransaction newAcceptFlow(UniqueIdentifier id, Instant startAt, long amountDuration, TemporalUnit unit) throws ExecutionException, InterruptedException {
+    private SignedTransaction newAcceptFlow(UniqueIdentifier id, Instant startAt, long days) throws ExecutionException, InterruptedException {
         MandateAcceptFlow.Initiator flow = new MandateAcceptFlow.Initiator(
-                id, startAt, amountDuration, unit);
+                id, startAt, days);
         CordaFuture<SignedTransaction> future = bobTheBrokerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
@@ -57,7 +57,7 @@ public class MandateFlowsTests extends BaseTests {
     }
     private SignedTransaction newUpdateFlow(UniqueIdentifier id, LineOfBusiness allowedBusiness, Instant startAt) throws ExecutionException, InterruptedException {
         MandateUpdateFlow.Initiator flow = new MandateUpdateFlow.Initiator(
-                id, allowedBusiness.toEnumSet(), startAt);
+                id, startAt, allowedBusiness.toList());
         CordaFuture<SignedTransaction> future = aliceTheCustomerNode.startFlow(flow);
         network.runNetwork();
         return future.get();
@@ -109,7 +109,7 @@ public class MandateFlowsTests extends BaseTests {
 
         SignedTransaction atx = this.newAcceptFlow(
                 mandate.getId(), Instant.now().plus(10, ChronoUnit.DAYS),
-                365, ChronoUnit.DAYS);
+                365);
         verifier = StateVerifier.fromTransaction(atx, bobTheBrokerNode.getServices());
         MandateState acceptedMandate = verifier
                 .output().one().one(MandateState.class)

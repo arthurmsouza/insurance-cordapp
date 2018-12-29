@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,13 +19,13 @@ public class MandateState implements LinearState {
     private final Party broker;
     private final Instant startAt;
     private final Instant expiredAt;
-    private final EnumSet<Line> allowedBusiness;
+    private final List<String> allowedBusiness;
 
     private final Phase phase;
     private final UniqueIdentifier id;
 
     public static class LineOfBusiness {
-        private EnumSet<Line> list = EnumSet.noneOf(Line.class);
+        private Set<String> list = new HashSet<>();
 
         public static LineOfBusiness all() {
             return new LineOfBusiness().PnC().LnS();
@@ -34,17 +33,17 @@ public class MandateState implements LinearState {
         public LineOfBusiness() {
             super();
         }
-        public LineOfBusiness(@NotNull EnumSet<Line> list) {
+        public LineOfBusiness(@NotNull List<String> list) {
             super();
-            this.list = list;
+            this.list.addAll(list);
         }
 
         private LineOfBusiness add(Line elem) {
-            this.list.add(elem);
+            this.list.add(elem.name());
             return this;
         }
         public boolean contains(Line elem) {
-            return this.list.contains(elem);
+            return this.list.contains(elem.name());
         }
         public LineOfBusiness PnC() {
             return this.add(Line.PnC);
@@ -61,8 +60,8 @@ public class MandateState implements LinearState {
         public LineOfBusiness LnS() {
             return this.IL().GL().Health();
         }
-        public EnumSet<Line> toEnumSet() {
-            return this.list;
+        public List<String> toList() {
+            return new ArrayList<>(this.list);
         }
     }
 
@@ -85,13 +84,13 @@ public class MandateState implements LinearState {
     @ConstructorForDeserialization
     public MandateState(@NotNull Party client, @NotNull Party broker, @NotNull Instant startAt,
                         @NotNull Instant expiredAt,
-                        @NotNull EnumSet<Line> allowedBusiness,
+                        @NotNull List<String> allowedBusiness,
                         Phase phase, @NotNull UniqueIdentifier id) {
         this.client = client;
         this.broker = broker;
         this.startAt = startAt;
         this.expiredAt = expiredAt;
-        this.allowedBusiness = allowedBusiness;
+        this.allowedBusiness = new LineOfBusiness(allowedBusiness).toList();
         this.phase = phase;
         this.id = id;
         this.checkValidAllowedBusiness();
@@ -99,30 +98,30 @@ public class MandateState implements LinearState {
 
     public MandateState(@NotNull Party client, @NotNull Party broker,
                         @NotNull Instant startAt, @NotNull Instant expiredAt,
-                        @NotNull EnumSet<Line> allowedBusiness) {
+                        @NotNull List<String> allowedBusiness) {
         this.client = client;
         this.broker = broker;
         this.startAt = startAt;
         this.expiredAt = expiredAt;
-        this.allowedBusiness = allowedBusiness;
+        this.allowedBusiness = new LineOfBusiness(allowedBusiness).toList();
         this.phase = Phase.REQUESTED;
         this.id = new UniqueIdentifier();
         this.checkValidAllowedBusiness();
     }
 
     public MandateState(@NotNull Party client, @NotNull Party broker,
-                        @NotNull EnumSet<Line> allowedBusiness) {
+                        @NotNull List<String> allowedBusiness) {
         this.client = client;
         this.broker = broker;
         this.startAt = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
         this.expiredAt = this.startAt.plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
-        this.allowedBusiness = allowedBusiness;
+        this.allowedBusiness = new LineOfBusiness(allowedBusiness).toList();
         this.phase = Phase.REQUESTED;
         this.id = new UniqueIdentifier();
         this.checkValidAllowedBusiness();
     }
     public MandateState(@NotNull Party client, @NotNull Party broker) {
-        this(client, broker, new LineOfBusiness().all().toEnumSet());
+        this(client, broker, new LineOfBusiness().all().toList());
     }
 
     public boolean isValidAt(Instant time) {
@@ -171,7 +170,7 @@ public class MandateState implements LinearState {
     }
 
     @NotNull
-    public EnumSet<Line> getAllowedBusiness() {
+    public List<String> getAllowedBusiness() {
         return this.allowedBusiness;
     }
 
@@ -209,18 +208,18 @@ public class MandateState implements LinearState {
                 this.client, this.broker,this.startAt, this.expiredAt, this.allowedBusiness, Phase.WITHDRAWN, this.getId());
     }
 
-    public MandateState accept(Instant startAt, long amountDuration, TemporalUnit unit) {
-        Instant newExpired = startAt.plus(amountDuration, unit);
+    public MandateState accept(Instant startAt, long days) {
+        Instant newExpired = startAt.plus(days, ChronoUnit.DAYS);
         return new MandateState(
                 this.client, this.broker,startAt, newExpired, this.allowedBusiness, Phase.ACCEPTED, this.getId());
     }
 
-    public MandateState updateTimestamps(Instant startAt, long amountDuration, TemporalUnit unit) {
-        Instant newExpired = startAt.plus(amountDuration, unit);
+    public MandateState updateTimestamps(Instant startAt, long days) {
+        Instant newExpired = startAt.plus(days, ChronoUnit.DAYS);
         return new MandateState(
                 this.client, this.broker,startAt, newExpired, this.allowedBusiness, this.phase, this.getId());
     }
-    public MandateState updateAllowedBusiness(@NotNull EnumSet<Line> allowedBusiness) {
+    public MandateState updateAllowedBusiness(@NotNull List<String> allowedBusiness) {
         return new MandateState(
                 this.client, this.broker,this.startAt, this.expiredAt, allowedBusiness, this.phase, this.getId());
     }

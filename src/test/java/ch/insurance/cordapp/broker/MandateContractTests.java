@@ -89,7 +89,7 @@ public class MandateContractTests extends BaseTests {
     }
 
     private MandateState newMandate(@NotNull Instant startAt, @NotNull Instant expiredAt) {
-        return new MandateState(aliceTheCustomer, bobTheBroker, startAt, expiredAt, LineOfBusiness.all().toEnumSet());
+        return new MandateState(aliceTheCustomer, bobTheBroker, startAt, expiredAt, LineOfBusiness.all().toList());
     }
     private MandateState newMandate() {
         return new MandateState(aliceTheCustomer, bobTheBroker);
@@ -156,7 +156,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10, ChronoUnit.DAYS);
+            MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -188,7 +188,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10, ChronoUnit.DAYS);
+            MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -202,7 +202,7 @@ public class MandateContractTests extends BaseTests {
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
             MandateState mandate2 = mandate.updateTimestamps(
-                    Instant.now().minus(15, ChronoUnit.DAYS), 10, ChronoUnit.DAYS);
+                    Instant.now().minus(15, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandate2);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -212,7 +212,7 @@ public class MandateContractTests extends BaseTests {
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
             MandateState update = mandate.updateTimestamps(
-                    Instant.now().plus(1, ChronoUnit.DAYS), 10, ChronoUnit.DAYS);
+                    Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -226,7 +226,7 @@ public class MandateContractTests extends BaseTests {
     public void mandate_update_emptyAllowances() {
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().toList());
             // already fails here due to error in serializing empty EnumSet
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
@@ -240,7 +240,7 @@ public class MandateContractTests extends BaseTests {
     public void mandate_update_allowances() {
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().PnC().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().PnC().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -249,7 +249,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().IL().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().IL().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -258,7 +258,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().GL().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().GL().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -267,7 +267,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().Health().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().Health().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
@@ -276,7 +276,7 @@ public class MandateContractTests extends BaseTests {
         });
         transaction(ledgerServices, tx -> {
             MandateState mandate = newMandate();
-            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().LnS().toEnumSet());
+            MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().LnS().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
             tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());

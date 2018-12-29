@@ -8,8 +8,11 @@ flow start TokenTransferFlow newOwner: PartyC, id: 764342c4-ca98-487c-a6a1-9b606
 broker / mandate
 ------------------------------
 
-flow start MandateRequestFlow broker: PartyB, startAt: "2019-01-01T00:00:00Z", allowedBusiness: [ "PnC" ]
 flow start MandateRequestFlow broker: PartyB, startAt: "2019-01-01T00:00:00Z", allowedBusiness: [ PnC ]
+
+flow start MandateUpdateFlow id: 095fe738-fb03-4765-aeef-16d26ba0b594, startAt: "2019-01-01T00:00:00Z", allowedBusiness: [ PnC, IL ]
+
+flow start MandateAcceptFlow id: 095fe738-fb03-4765-aeef-16d26ba0b594, startAt: "2019-01-01T00:00:00Z", days: 365
 
 
 show all transactions

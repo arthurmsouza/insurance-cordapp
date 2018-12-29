@@ -13,7 +13,6 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
-import java.time.temporal.TemporalUnit;
 import java.util.Set;
 
 
@@ -25,14 +24,12 @@ public class MandateAcceptFlow {
 
         private final UniqueIdentifier id;
         private final Instant startAt;
-        private final long amountDuration;
-        private final TemporalUnit unit;
+        private long days;
 
-        public Initiator(UniqueIdentifier id, Instant startAt, long amountDuration, TemporalUnit unit) {
+        public Initiator(UniqueIdentifier id, Instant startAt, long days) {
             this.id = id;
             this.startAt = startAt;
-            this.amountDuration = amountDuration;
-            this.unit = unit;
+            this.days = days;
         }
 
         @Suspendable
@@ -57,7 +54,7 @@ public class MandateAcceptFlow {
              * ===========================================================================*/
             // We build our transaction.
             progressTracker.setCurrentStep(BUILDING);
-            MandateState acceptedMandate = mandate.accept(this.startAt, this.amountDuration, this.unit);
+            MandateState acceptedMandate = mandate.accept(this.startAt, this.days);
 
             TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
                     mandate,

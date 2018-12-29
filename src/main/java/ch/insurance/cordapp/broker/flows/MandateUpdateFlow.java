@@ -13,12 +13,8 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-
-import static ch.insurance.cordapp.broker.MandateState.*;
 
 
 public class MandateUpdateFlow {
@@ -28,13 +24,13 @@ public class MandateUpdateFlow {
     public static class Initiator extends BaseFlow<MandateState> {
 
         private final UniqueIdentifier id;
-        private EnumSet<Line> allowedBusiness;
         private Instant startAt;
+        private List<String> allowedBusiness;
 
-        public Initiator(UniqueIdentifier id, EnumSet<Line> allowedBusiness, Instant startAt) {
+        public Initiator(UniqueIdentifier id, Instant startAt, List<String> allowedBusiness) {
             this.id = id;
-            this.allowedBusiness = allowedBusiness;
             this.startAt = startAt;
+            this.allowedBusiness = allowedBusiness;
         }
 
         @Suspendable
@@ -61,7 +57,7 @@ public class MandateUpdateFlow {
             progressTracker.setCurrentStep(BUILDING);
             MandateState updatedMandate = mandate
                     .updateAllowedBusiness(this.allowedBusiness)
-                    .updateTimestamps(this.startAt, 365, ChronoUnit.DAYS);
+                    .updateTimestamps(this.startAt, 365);
 
             TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
                     mandate,

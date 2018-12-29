@@ -61,7 +61,7 @@ public class MandateStateTests extends BaseTests {
         Instant newStart = Instant.now();
         Instant newEnd = newStart.plus(10, ChronoUnit.DAYS);
         MandateState mandate = new MandateState(aliceTheCustomer, bobTheBroker);
-        MandateState updatedMandate = mandate.accept(newStart, 10, ChronoUnit.DAYS);
+        MandateState updatedMandate = mandate.accept(newStart, 10);
         assert(updatedMandate.getExpiredAt().equals(newEnd));
         assert(updatedMandate.isAccepted());
     }
@@ -72,7 +72,7 @@ public class MandateStateTests extends BaseTests {
         Instant newStart = Instant.now();
         Instant newEnd = newStart.plus(10, ChronoUnit.DAYS);
         MandateState mandate = new MandateState(aliceTheCustomer, bobTheBroker);
-        MandateState updatedMandate = mandate.updateTimestamps(newStart, 10, ChronoUnit.DAYS);
+        MandateState updatedMandate = mandate.updateTimestamps(newStart, 10);
         assert(updatedMandate.getExpiredAt().equals(newEnd));
         assert(!updatedMandate.isAccepted());
     }

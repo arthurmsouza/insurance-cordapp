@@ -3,7 +3,6 @@ package ch.insurance.cordapp.broker.flows;
 import ch.insurance.cordapp.BaseFlow;
 import ch.insurance.cordapp.broker.MandateContract;
 import ch.insurance.cordapp.broker.MandateState;
-import ch.insurance.cordapp.broker.MandateState.Line;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.InitiatingFlow;
@@ -14,7 +13,7 @@ import net.corda.core.transactions.TransactionBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.EnumSet;
+import java.util.List;
 
 
 public class MandateRequestFlow {
@@ -24,9 +23,9 @@ public class MandateRequestFlow {
     public static class Initiator extends BaseFlow<MandateState> {
         private final Party broker;
         private final Instant startAt;
-        private final EnumSet<Line> allowedBusiness;
+        private final List<String> allowedBusiness;
 
-        public Initiator(Party broker, Instant startAt, EnumSet<Line> allowedBusiness) {
+        public Initiator(Party broker, Instant startAt, List<String> allowedBusiness) {
             this.broker = broker;
             this.startAt = startAt;
             this.allowedBusiness = allowedBusiness;
