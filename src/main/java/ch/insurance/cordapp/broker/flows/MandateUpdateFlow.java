@@ -65,7 +65,8 @@ public class MandateUpdateFlow {
                     .updateAllowedBusiness(this.allowedBusiness)
                     .updateTimestamps(this.startAt, 365);
 
-            TransactionBuilder transactionBuilder = getMyTransactionBuilderSignedByMe(
+            TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
+                    mandate,
                     new MandateContract.Commands.Update());
             transactionBuilder.addInputState(mandateToTransfer);
             transactionBuilder.addOutputState(updatedMandate, MandateContract.ID);
@@ -74,7 +75,7 @@ public class MandateUpdateFlow {
              *          TODO 3 - Synchronize counterpart parties, send, sign and finalize!
              * ===========================================================================*/
             //return signCollectAndFinalize(me, updatedMandate.getBroker(), transactionBuilder);
-            return signAndFinalize(transactionBuilder);
+            return signCollectAndFinalize(getOurIdentity(), mandate.getBroker(), transactionBuilder);
         }
 
     }

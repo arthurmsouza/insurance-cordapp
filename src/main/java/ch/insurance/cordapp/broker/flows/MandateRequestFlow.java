@@ -1,12 +1,12 @@
 package ch.insurance.cordapp.broker.flows;
 
 import ch.insurance.cordapp.BaseFlow;
+import ch.insurance.cordapp.ResponderBaseFlow;
 import ch.insurance.cordapp.broker.MandateContract;
 import ch.insurance.cordapp.broker.MandateState;
 import co.paralleluniverse.fibers.Suspendable;
-import net.corda.core.flows.FlowException;
-import net.corda.core.flows.InitiatingFlow;
-import net.corda.core.flows.StartableByRPC;
+import kotlin.Unit;
+import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
@@ -34,7 +34,7 @@ public class MandateRequestFlow {
 
         @Override
         public ProgressTracker getProgressTracker() {
-            return this.progressTracker_nosync_nocollect;
+            return this.progressTracker_nosync;
         }
 
 
@@ -57,15 +57,29 @@ public class MandateRequestFlow {
              * ===========================================================================*/
             // We build our transaction.
             getProgressTracker().setCurrentStep(BUILDING);
-            TransactionBuilder transactionBuilder = getMyTransactionBuilderSignedByMe(new MandateContract.Commands.Request());
+            TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
+                    mandate,
+                    new MandateContract.Commands.Request());
             transactionBuilder.addOutputState(mandate, MandateContract.ID);
 
             /* ============================================================================
              *          TODO 2 - Write our contract to control issuance!
              * ===========================================================================*/
             // We check our transaction is valid based on its contracts.
-            return signAndFinalize(transactionBuilder);
+            return signCollectAndFinalize(getOurIdentity(), mandate.getBroker(), transactionBuilder);
         }
 
     }
-}
+    @InitiatedBy(MandateRequestFlow.Initiator.class)
+    public static class Responder extends ResponderBaseFlow<MandateState> {
+
+        public Responder(FlowSession otherFlow) {
+            super(otherFlow);
+        }
+
+        @Suspendable
+        @Override
+        public Unit call() throws FlowException {
+            return this.receiveCounterpartiesNoTxChecking();
+        }
+    }}

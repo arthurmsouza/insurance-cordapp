@@ -28,8 +28,9 @@ public class MandateContractTests extends BaseTests {
         });
 
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, newMandate());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState mandate = newMandate();
+            tx.output(MandateContract.ID, mandate);
+            tx.command(mandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.verifies();
             return null;
         });
@@ -38,32 +39,35 @@ public class MandateContractTests extends BaseTests {
     @Test
     public void mandate_request_clientAndBrokerNotSame() {
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, new MandateState(aliceTheCustomer, aliceTheCustomer));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState mandate = new MandateState(aliceTheCustomer, aliceTheCustomer);
+            tx.output(MandateContract.ID, mandate);
+            tx.command(mandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("should be different than");
             return null;
         });
 
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, newMandate());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState mandate = newMandate();
+            tx.output(MandateContract.ID, mandate);
+            tx.command(mandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.verifies();
             return null;
         });
     }
 
-
     @Test
     public void mandate_request_invalidSigner() {
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, newMandate());
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Request());
-            tx.failsWith("client must be the signer");
+            MandateState mandate = newMandate();
+            tx.output(MandateContract.ID, mandate);
+            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            tx.failsWith("all participants must be signer");
             return null;
         });
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, newMandate());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState mandate = newMandate();
+            tx.output(MandateContract.ID, mandate);
+            tx.command(mandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.verifies();
             return null;
         });
@@ -76,13 +80,14 @@ public class MandateContractTests extends BaseTests {
             MandateState state = newMandate();
             state = state.accept();
             tx.output(MandateContract.ID, state);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            tx.command(state.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
-            tx.output(MandateContract.ID, newMandate());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState mandate = newMandate();
+            tx.output(MandateContract.ID, mandate);
+            tx.command(mandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.verifies();
             return null;
         });
@@ -100,8 +105,9 @@ public class MandateContractTests extends BaseTests {
         transaction(ledgerServices, tx -> {
             Instant start = Instant.now().minus(1, ChronoUnit.DAYS);
             Instant end = start.plus(10, ChronoUnit.DAYS);
-            tx.output(MandateContract.ID, newMandate(start, end));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState newMandate = newMandate(start, end);
+            tx.output(MandateContract.ID, newMandate);
+            tx.command(newMandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("start date must be in the future");
             return null;
         });
@@ -109,32 +115,36 @@ public class MandateContractTests extends BaseTests {
         transaction(ledgerServices, tx -> {
             Instant start = Instant.now().minus(10, ChronoUnit.DAYS);
             Instant end = start.plus(5, ChronoUnit.DAYS);
-            tx.output(MandateContract.ID, newMandate(start, end));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState newMandate = newMandate(start, end);
+            tx.output(MandateContract.ID, newMandate);
+            tx.command(newMandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("expired date must be in the future");
             return null;
         });
         transaction(ledgerServices, tx -> {
             Instant start = Instant.now().plus(10, ChronoUnit.DAYS);
             Instant end = start.minus(1, ChronoUnit.DAYS);
-            tx.output(MandateContract.ID, newMandate(start, end));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState newMandate = newMandate(start, end);
+            tx.output(MandateContract.ID, newMandate);
+            tx.command(newMandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("expired date must be later than start");
             return null;
         });
         transaction(ledgerServices, tx -> {
             Instant start = Instant.now().plus(10, ChronoUnit.DAYS);
             Instant end = start.plus(100, ChronoUnit.SECONDS);
-            tx.output(MandateContract.ID, newMandate(start, end));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState newMandate = newMandate(start, end);
+            tx.output(MandateContract.ID, newMandate);
+            tx.command(newMandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.failsWith("difference between start and end must be at least 1 day");
             return null;
         });
         transaction(ledgerServices, tx -> {
             Instant start = Instant.now().plus(10, ChronoUnit.DAYS);
             Instant end = start.plus(365, ChronoUnit.DAYS);
-            tx.output(MandateContract.ID, newMandate(start, end));
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Request());
+            MandateState newMandate = newMandate(start, end);
+            tx.output(MandateContract.ID, newMandate);
+            tx.command(newMandate.getParticipantKeys(), new MandateContract.Commands.Request());
             tx.verifies();
             return null;
         });
@@ -150,7 +160,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandate2 = newMandate();
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandate2);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandate2.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.failsWith("id must be same");
             return null;
         });
@@ -159,7 +169,7 @@ public class MandateContractTests extends BaseTests {
             MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(update.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -173,7 +183,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandate2 = new MandateState(cesarTheInsurer, bobTheBroker);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandate2);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandate2.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.failsWith("client must be the same");
             return null;
         });
@@ -182,7 +192,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandate2 = new MandateState(aliceTheCustomer, cesarTheInsurer);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandate2);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandate2.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.failsWith("broker must be the same");
             return null;
         });
@@ -191,7 +201,7 @@ public class MandateContractTests extends BaseTests {
             MandateState update = mandate.updateTimestamps(Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(update.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -205,7 +215,7 @@ public class MandateContractTests extends BaseTests {
                     Instant.now().minus(15, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandate2);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandate2.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.failsWith("expired date must be in the future");
             return null;
         });
@@ -215,7 +225,7 @@ public class MandateContractTests extends BaseTests {
                     Instant.now().plus(1, ChronoUnit.DAYS), 10);
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, update);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(update.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -230,7 +240,7 @@ public class MandateContractTests extends BaseTests {
             // already fails here due to error in serializing empty EnumSet
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.failsWith("one line of business must be choosen");
             return null;
         });
@@ -243,7 +253,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().PnC().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -252,7 +262,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().IL().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -261,7 +271,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().GL().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -270,7 +280,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().Health().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -279,7 +289,7 @@ public class MandateContractTests extends BaseTests {
             MandateState mandatePnC = mandate.updateAllowedBusiness(new LineOfBusiness().LnS().toList());
             tx.input(MandateContract.ID, mandate);
             tx.output(MandateContract.ID, mandatePnC);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Update());
+            tx.command(mandatePnC.getParticipantKeys(), new MandateContract.Commands.Update());
             tx.verifies();
             return null;
         });
@@ -292,7 +302,7 @@ public class MandateContractTests extends BaseTests {
             MandateState withdraw = newMandate().withdraw();
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.command(withdraw.getParticipantKeys(), new MandateContract.Commands.Deny());
             tx.failsWith("input mandate must be REQUESTED / ACCEPTED");
             return null;
         });
@@ -300,25 +310,27 @@ public class MandateContractTests extends BaseTests {
             MandateState deny = newMandate().deny();
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.command(deny.getParticipantKeys(), new MandateContract.Commands.Deny());
             tx.failsWith("input mandate must be REQUESTED / ACCEPTED");
             return null;
         });
 
         transaction(ledgerServices, tx -> {
             MandateState accept = newMandate().accept();
+            MandateState deny = accept.deny();
             tx.input(MandateContract.ID, accept);
-            tx.output(MandateContract.ID, accept.deny());
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.output(MandateContract.ID, deny);
+            tx.command(deny.getParticipantKeys(), new MandateContract.Commands.Deny());
             tx.verifies();
             return null;
         });
 
         transaction(ledgerServices, tx -> {
             MandateState requested = newMandate();
+            MandateState deny = requested.deny();
             tx.input(MandateContract.ID, requested);
-            tx.output(MandateContract.ID, requested.deny());
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Deny());
+            tx.output(MandateContract.ID, deny);
+            tx.command(deny.getParticipantKeys(), new MandateContract.Commands.Deny());
             tx.verifies();
             return null;
         });
@@ -331,7 +343,7 @@ public class MandateContractTests extends BaseTests {
             MandateState accept = newMandate().accept();
             tx.input(MandateContract.ID, accept);
             tx.output(MandateContract.ID, accept);
-            tx.command(this.getPublicKeys(bobTheBroker, aliceTheCustomer), new MandateContract.Commands.Accept());
+            tx.command(accept.getParticipantKeys(), new MandateContract.Commands.Accept());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
@@ -339,7 +351,7 @@ public class MandateContractTests extends BaseTests {
             MandateState withdraw = newMandate().withdraw();
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.command(withdraw.getParticipantKeys(), new MandateContract.Commands.Accept());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
@@ -347,15 +359,16 @@ public class MandateContractTests extends BaseTests {
             MandateState deny = newMandate().deny();
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.command(deny.getParticipantKeys(), new MandateContract.Commands.Accept());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState requested = newMandate();
+            MandateState accepted = requested.accept();
             tx.input(MandateContract.ID, requested);
-            tx.output(MandateContract.ID, requested.accept());
-            tx.command(bobTheBroker.getOwningKey(), new MandateContract.Commands.Accept());
+            tx.output(MandateContract.ID, accepted);
+            tx.command(accepted.getParticipantKeys(), new MandateContract.Commands.Accept());
             tx.verifies();
             return null;
         });
@@ -368,7 +381,7 @@ public class MandateContractTests extends BaseTests {
             MandateState accept = newMandate().accept();
             tx.input(MandateContract.ID, accept);
             tx.output(MandateContract.ID, accept);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.command(accept.getParticipantKeys(), new MandateContract.Commands.Withdraw());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
@@ -376,7 +389,7 @@ public class MandateContractTests extends BaseTests {
             MandateState withdraw = newMandate().withdraw();
             tx.input(MandateContract.ID, withdraw);
             tx.output(MandateContract.ID, withdraw);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.command(withdraw.getParticipantKeys(), new MandateContract.Commands.Withdraw());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
@@ -384,15 +397,16 @@ public class MandateContractTests extends BaseTests {
             MandateState deny = newMandate().deny();
             tx.input(MandateContract.ID, deny);
             tx.output(MandateContract.ID, deny);
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.command(deny.getParticipantKeys(), new MandateContract.Commands.Withdraw());
             tx.failsWith("input mandate must be REQUESTED");
             return null;
         });
         transaction(ledgerServices, tx -> {
             MandateState requested = newMandate();
+            MandateState withdraw = requested.withdraw();
             tx.input(MandateContract.ID, requested);
             tx.output(MandateContract.ID, requested.withdraw());
-            tx.command(aliceTheCustomer.getOwningKey(), new MandateContract.Commands.Withdraw());
+            tx.command(withdraw.getParticipantKeys(), new MandateContract.Commands.Withdraw());
             tx.verifies();
             return null;
         });

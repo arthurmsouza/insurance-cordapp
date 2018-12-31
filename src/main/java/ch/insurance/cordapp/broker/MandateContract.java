@@ -46,12 +46,12 @@ public class MandateContract implements Contract {
                     .differentParty(
                             "client", p1 -> ((MandateState)p1).getClient(),
                             "broker", p2 -> ((MandateState)p2).getBroker())
-                    .signer("client must be the signer", state -> ((MandateState)state).getClient())
                     .object();
             req.using("mandate must be REQUESTED",
                     mandate.isRequested());
             this.verifyAllowances(mandate);
             this.verifyTimestamps(mandate);
+            this.verifyAllSigners(verifier);
             return null;
         });
     }
@@ -71,6 +71,15 @@ public class MandateContract implements Contract {
             req.using(
                     "start date must be in the future",
                     mandate.getStartAt().isAfter(Instant.now()));
+            return null;
+        });
+    }
+
+    private void verifyAllSigners(StateVerifier verifier) {
+        requireThat(req -> {
+            verifier
+                .output()
+                .participantsAreSigner("all participants must be signer");
             return null;
         });
     }
@@ -109,7 +118,7 @@ public class MandateContract implements Contract {
         requireThat(req -> {
             MandateState input = verifier
                     .input().one().one(MandateState.class)
-                    .signer("client must be the signer", state -> ((MandateState)state).getClient())
+                    //.signer("client must be the signer", state -> ((MandateState)state).getClient())
                     .object();
             MandateState output = verifier
                     .output().one().one(MandateState.class)
@@ -119,6 +128,7 @@ public class MandateContract implements Contract {
             this.verifyAllowances(output);
             this.verifyTimestamps(output);
             this.verifySameValues(input, output);
+            this.verifyAllSigners(verifier);
             return null;
         });
     }
@@ -128,7 +138,6 @@ public class MandateContract implements Contract {
 
             MandateState input = verifier
                     .input().one().one(MandateState.class)
-                    //.participantsAreSigner("all participants must be signer")
                     .object();
             MandateState output = verifier
                     .output().one().one(MandateState.class)
@@ -141,7 +150,7 @@ public class MandateContract implements Contract {
             this.verifyAllowances(output);
             this.verifyTimestamps(output);
             this.verifySameValues(input, output);
-
+            this.verifyAllSigners(verifier);
             return null;
         });
     }
@@ -150,7 +159,6 @@ public class MandateContract implements Contract {
 
             MandateState input = verifier
                     .input().one().one(MandateState.class)
-                    //.participantsAreSigner("all participants must be signer")
                     .object();
             MandateState output = verifier
                     .output().one().one(MandateState.class)
@@ -162,6 +170,7 @@ public class MandateContract implements Contract {
             this.verifyAllowances(output);
             this.verifyTimestamps(output);
             this.verifySameValues(input, output);
+            this.verifyAllSigners(verifier);
             return null;
         });
     }
@@ -169,7 +178,6 @@ public class MandateContract implements Contract {
         requireThat(req -> {
             MandateState input = verifier
                     .input().one().one(MandateState.class)
-                    //.participantsAreSigner("all participants must be signer")
                     .object();
             MandateState output = verifier
                     .output().one().one(MandateState.class)
@@ -181,6 +189,7 @@ public class MandateContract implements Contract {
             this.verifyAllowances(output);
             this.verifyTimestamps(output);
             this.verifySameValues(input, output);
+            this.verifyAllSigners(verifier);
             return null;
         });
     }
