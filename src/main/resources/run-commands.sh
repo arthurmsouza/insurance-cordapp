@@ -1,13 +1,31 @@
+#!/usr/bin/env bash
 OLDDIR=`pwd`
 cd "../../../build/nodes/"
 DIR=`pwd`
 cd $OLDDIR
-echo 'cd "'$DIR'/Notary" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=Notary-corda.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7005" "-jar" "corda.jar"; exit' > Notar.command;chmod u+x Notar.command;open Notar.command
 
-echo 'cd "'$DIR'/PartyA" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyA-corda.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7006" "-jar" "corda.jar"; exit' > A.command;chmod u+x A.command;open A.command
-echo 'cd "'$DIR'/PartyB" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyB-corda.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5010 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7010" "-jar" "corda.jar"; exit'  > B.command;chmod u+x B.command;open B.command
-echo 'cd "'$DIR'/PartyC" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyC-corda.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5008 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7008" "-jar" "corda.jar"; exit'  > C.command;chmod u+x C.command;open C.command
+function start_corda_node {
+    local name=$1
+    local debugPort=$2
+    local agentPort=$3
+    echo "start $name on port $debugPort / $agentPort"
+    echo 'cd "'$DIR'/'$name'" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname='$name'-corda.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address='$debugPort' -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port='$agentPort'" "-jar" "corda.jar"; exit' > $name.command;chmod u+x $name.command;open $name.command
 
-#echo 'cd "'$DIR'/PartyA" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyA-corda-webserver.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7007" "-jar" "corda-webserver.jar"; exit' > WebA.command;chmod u+x WebA.command;open WebA.command
-#echo 'cd "'$DIR'/PartyB" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyB-corda-webserver.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5011 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7011" "-jar" "corda-webserver.jar"; exit' > WebB.command;chmod u+x WebB.command;open WebB.command
-#echo 'cd "'$DIR'/PartyC" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname=PartyC-corda-webserver.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5009 -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port=7009" "-jar" "corda-webserver.jar"; exit' > WebC.command;chmod u+x WebC.command;open WebC.command
+}
+
+function start_web_node {
+    local name=$1
+    local debugPort=$2
+    local agentPort=$3
+    echo 'cd "'$DIR'/'$name'" ; "/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home/jre/bin/java" "-Dname='$name'-corda-webserver.jar" "-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address='$debugPort' -javaagent:drivers/jolokia-jvm-1.3.7-agent.jar=port='$agentPort'" "-jar" "corda-webserver.jar"; exit' > $name-Web.command;chmod u+x $name-Web.command;open $name-Web.command
+}
+
+start_corda_node "Notary" "5005" "7005"
+start_corda_node "PartyA" "5006" "7006"
+start_corda_node "PartyB" "5008" "7008"
+start_corda_node "PartyC" "5010" "7010"
+
+#start_web_node "PartyA" "5007" "7007"
+#start_web_node "PartyB" "5009" "7009"
+#start_web_node "PartyC" "5011" "7011"
+
