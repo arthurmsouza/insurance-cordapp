@@ -1,18 +1,18 @@
 package ch.insurance.cordapp.broker.flows;
 
 import ch.insurance.cordapp.BaseFlow;
+import ch.insurance.cordapp.ResponderBaseFlow;
 import ch.insurance.cordapp.broker.MandateContract;
 import ch.insurance.cordapp.broker.MandateState;
 import co.paralleluniverse.fibers.Suspendable;
-import com.google.common.collect.Sets;
+import kotlin.Unit;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
-
-import java.util.Set;
+import net.corda.core.utilities.ProgressTracker;
 
 
 public class MandateWithdrawFlow {
@@ -27,17 +27,22 @@ public class MandateWithdrawFlow {
             this.id = id;
         }
 
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return this.progressTracker_nosync;
+        }
+
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            progressTracker.setCurrentStep(PREPARATION);
+            getProgressTracker().setCurrentStep(PREPARATION);
             // We get a reference to our own identity.
             Party me = getOurIdentity();
 
             /* ============================================================================
              *         TODO 1 - search for our object by <id>
              * ===========================================================================*/
-            StateAndRef<MandateState> mandateToTransfer =  this.getStateByLinearId(MandateState.class, this.id);
+            StateAndRef<MandateState> mandateToTransfer =  this.getLastStateByLinearId(MandateState.class, this.id);
             MandateState mandate = this.getStateByRef(mandateToTransfer);
 
             if (!me.equals(mandate.getClient())) {
@@ -48,7 +53,7 @@ public class MandateWithdrawFlow {
              *      TODO 2 - Build our issuance transaction to update the ledger!
              * ===========================================================================*/
             // We build our transaction.
-            progressTracker.setCurrentStep(BUILDING);
+            getProgressTracker().setCurrentStep(BUILDING);
             MandateState withdrawnMandate = mandate.withdraw();
 
             TransactionBuilder transactionBuilder = getTransactionBuilderSignedByParticipants(
@@ -60,27 +65,23 @@ public class MandateWithdrawFlow {
             /* ============================================================================
              *          TODO 3 - Synchronize counterpart parties, send, sign and finalize!
              * ===========================================================================*/
-            Set<Party> counterparties = Sets.newHashSet(mandate.getBroker());
-            return synchronizeCounterpartiesAndFinalize(me, counterparties, transactionBuilder);
+            return signCollectAndFinalize(me, mandate.getBroker(), transactionBuilder);
         }
 
     }
 
 
-    @InitiatedBy(Initiator.class)
-    public static class Responder extends FlowLogic<SignedTransaction> {
-        private final FlowSession otherFlow;
+    @InitiatedBy(MandateWithdrawFlow.Initiator.class)
+    public static class Responder extends ResponderBaseFlow<MandateState> {
 
         public Responder(FlowSession otherFlow) {
-            this.otherFlow = otherFlow;
+            super(otherFlow);
         }
 
         @Suspendable
         @Override
-        public SignedTransaction call() throws FlowException {
-            //subFlow(new IdentitySyncFlow.Receive(otherFlow));
-            SignedTransaction stx = subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
-            return waitForLedgerCommit(stx.getId());
+        public Unit call() throws FlowException {
+            return this.receiveCounterpartiesNoTxChecking();
         }
     }
 }

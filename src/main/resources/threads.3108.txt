@@ -1,0 +1,200 @@
+2018-12-30 14:55:08
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.191-b12 mixed mode):
+
+"Attach Listener" #18 daemon prio=9 os_prio=31 tid=0x00007fdb6e8ad000 nid=0x5803 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #17 daemon prio=9 os_prio=31 tid=0x00007fdb6e8ac800 nid=0xa903 waiting for monitor entry [0x00007000035f7000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- waiting to lock <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #16 daemon prio=9 os_prio=31 tid=0x00007fdb6e8ab800 nid=0x5503 waiting for monitor entry [0x00007000034f4000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- waiting to lock <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #15 daemon prio=9 os_prio=31 tid=0x00007fdb6e8ab000 nid=0x3a03 waiting for monitor entry [0x00007000033f1000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- waiting to lock <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #14 daemon prio=9 os_prio=31 tid=0x00007fdb6e040800 nid=0x3d03 waiting for monitor entry [0x00007000032ee000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- waiting to lock <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #13 daemon prio=9 os_prio=31 tid=0x00007fdb6d9cf000 nid=0x3f07 waiting for monitor entry [0x00007000031eb000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- waiting to lock <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"cleanup" #9 prio=5 os_prio=31 tid=0x00007fdb6d1cd800 nid=0x4103 in Object.wait() [0x00007000030e8000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(Native Method)
+	- waiting on <0x0000000796157c70> (a java.lang.UNIXProcess)
+	at java.lang.Object.wait(Object.java:502)
+	at java.lang.UNIXProcess.waitFor(UNIXProcess.java:395)
+	- locked <0x0000000796157c70> (a java.lang.UNIXProcess)
+	at Capsule.cleanup0(Capsule.java:1410)
+	at Capsule.cleanup(Capsule.java:1403)
+	at Capsule.cleanup(Capsule.java:1401)
+	at Capsule.cleanup(Capsule.java:1401)
+	at Capsule.cleanup1(Capsule.java:1390)
+	at Capsule.run(Capsule.java:1309)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"SIGTERM handler" #12 daemon prio=9 os_prio=31 tid=0x00007fdb6e8aa000 nid=0x2f07 in Object.wait() [0x0000700002fe5000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(Native Method)
+	- waiting on <0x0000000795e9cdb8> (a java.lang.Thread)
+	at java.lang.Thread.join(Thread.java:1252)
+	- locked <0x0000000795e9cdb8> (a java.lang.Thread)
+	at java.lang.Thread.join(Thread.java:1326)
+	at java.lang.ApplicationShutdownHooks.runHooks(ApplicationShutdownHooks.java:107)
+	at java.lang.ApplicationShutdownHooks$1.run(ApplicationShutdownHooks.java:46)
+	at java.lang.Shutdown.runHooks(Shutdown.java:123)
+	at java.lang.Shutdown.sequence(Shutdown.java:167)
+	at java.lang.Shutdown.exit(Shutdown.java:212)
+	- locked <0x0000000795e9d148> (a java.lang.Class for java.lang.Shutdown)
+	at java.lang.Terminator$1.handle(Terminator.java:52)
+	at sun.misc.Signal$1.run(Signal.java:212)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- None
+
+"process reaper" #11 daemon prio=10 os_prio=31 tid=0x00007fdb6d2f7800 nid=0x1907 runnable [0x0000700001fdd000]
+   java.lang.Thread.State: RUNNABLE
+	at java.lang.UNIXProcess.waitForProcessExit(Native Method)
+	at java.lang.UNIXProcess.lambda$initStreams$3(UNIXProcess.java:289)
+	at java.lang.UNIXProcess$$Lambda$7/1709537756.run(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+	- <0x00000007961637b0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"Service Thread" #8 daemon prio=9 os_prio=31 tid=0x00007fdb6e02e000 nid=0x3603 runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"C1 CompilerThread2" #7 daemon prio=9 os_prio=31 tid=0x00007fdb6e032800 nid=0x4303 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"C2 CompilerThread1" #6 daemon prio=9 os_prio=31 tid=0x00007fdb6d016800 nid=0x3303 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"C2 CompilerThread0" #5 daemon prio=9 os_prio=31 tid=0x00007fdb6e827800 nid=0x4403 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"Signal Dispatcher" #4 daemon prio=9 os_prio=31 tid=0x00007fdb6e81c000 nid=0x310b runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"Finalizer" #3 daemon prio=8 os_prio=31 tid=0x00007fdb6e02d000 nid=0x4f03 in Object.wait() [0x000070000284d000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(Native Method)
+	- waiting on <0x0000000795588ed0> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:144)
+	- locked <0x0000000795588ed0> (a java.lang.ref.ReferenceQueue$Lock)
+	at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:165)
+	at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:216)
+
+   Locked ownable synchronizers:
+	- None
+
+"Reference Handler" #2 daemon prio=10 os_prio=31 tid=0x00007fdb6e02c000 nid=0x2c03 in Object.wait() [0x000070000274a000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(Native Method)
+	- waiting on <0x0000000795586bf8> (a java.lang.ref.Reference$Lock)
+	at java.lang.Object.wait(Object.java:502)
+	at java.lang.ref.Reference.tryHandlePending(Reference.java:191)
+	- locked <0x0000000795586bf8> (a java.lang.ref.Reference$Lock)
+	at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:153)
+
+   Locked ownable synchronizers:
+	- None
+
+"main" #1 prio=5 os_prio=31 tid=0x00007fdb6e800800 nid=0x2403 in Object.wait() [0x0000700002138000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait(Native Method)
+	- waiting on <0x0000000796157c70> (a java.lang.UNIXProcess)
+	at java.lang.Object.wait(Object.java:502)
+	at java.lang.UNIXProcess.waitFor(UNIXProcess.java:395)
+	- locked <0x0000000796157c70> (a java.lang.UNIXProcess)
+	at Capsule.launch0(Capsule.java:1371)
+	at Capsule.launch(Capsule.java:1340)
+	at Capsule.launch(Capsule.java:1340)
+	at Capsule.launch(Capsule.java:1340)
+	at Capsule.launch(Capsule.java:1270)
+	at Capsule.main0(Capsule.java:394)
+	at Capsule.main(Capsule.java:374)
+
+   Locked ownable synchronizers:
+	- None
+
+"VM Thread" os_prio=31 tid=0x00007fdb6e027800 nid=0x5203 runnable 
+
+"GC task thread#0 (ParallelGC)" os_prio=31 tid=0x00007fdb6d801800 nid=0x1d07 runnable 
+
+"GC task thread#1 (ParallelGC)" os_prio=31 tid=0x00007fdb6d802000 nid=0x1e03 runnable 
+
+"GC task thread#2 (ParallelGC)" os_prio=31 tid=0x00007fdb6d802800 nid=0x2a03 runnable 
+
+"GC task thread#3 (ParallelGC)" os_prio=31 tid=0x00007fdb6d804000 nid=0x5403 runnable 
+
+"VM Periodic Task Thread" os_prio=31 tid=0x00007fdb6d01e800 nid=0x3803 waiting on condition 
+
+JNI global references: 339
+

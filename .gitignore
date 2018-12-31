@@ -6,3 +6,4 @@ lib/dependencies/
 **/out
 insurance-cordapp.iml
 **/bin
+*.command

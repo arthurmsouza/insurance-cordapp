@@ -57,7 +57,7 @@ abstract public class BaseTests {
 
         ledgerServices = new MockServices(
                 ImmutableList.of("ch.insurance.cordapp"),
-                aliceID
+                aliceTheCustomer.getName()
         );
 
     }

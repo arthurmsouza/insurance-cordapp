@@ -15,6 +15,7 @@ import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
+import net.corda.core.utilities.ProgressTracker;
 import net.corda.finance.contracts.asset.Cash;
 
 import java.security.PublicKey;
@@ -39,11 +40,16 @@ public class TokenSettlement {
             this.amount = amount;
         }
 
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return this.progressTracker_nosync;
+        }
+
 
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            progressTracker.setCurrentStep(PREPARATION);
+            getProgressTracker().setCurrentStep(PREPARATION);
 
             // We choose our transaction's notary (the notary prevents double-spends).
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
@@ -60,7 +66,7 @@ public class TokenSettlement {
              *              add cash from owner->issuer to the transaction
              * ===========================================================================*/
             // We create our new TokenState.
-            StateAndRef<TokenState> tokenInputStateToSettle =  this.getStateByLinearId(
+            StateAndRef<TokenState> tokenInputStateToSettle =  this.getLastStateByLinearId(
                     TokenState.class, this.id);
             TokenState tokenInputState = this.getStateByRef(tokenInputStateToSettle);
             final Party issuer = tokenInputState.getIssuer();
@@ -89,7 +95,7 @@ public class TokenSettlement {
              *      TODO 3 - Build our token issuance transaction to update the ledger!
              * ===========================================================================*/
 
-            progressTracker.setCurrentStep(BUILDING);
+            getProgressTracker().setCurrentStep(BUILDING);
 
             // Stage 5. Create a settle command.
             final List<PublicKey> requiredSigners = tokenInputState.getParticipantKeys();
@@ -122,7 +128,7 @@ public class TokenSettlement {
              * ===========================================================================*/
             // Stage 6. Verify and sign the transaction.
             // We check our transaction is valid based on its contracts.
-            progressTracker.setCurrentStep(SIGNING);
+            getProgressTracker().setCurrentStep(SIGNING);
             builder.verify(getServiceHub());
 
             // add the issuer to the singers beside the current owner from the cash transaction
@@ -134,9 +140,10 @@ public class TokenSettlement {
 
 
             // Stage 10. Get counterparty signature.
-            progressTracker.setCurrentStep(COLLECTING);
+            getProgressTracker().setCurrentStep(COLLECTING);
             final FlowSession session = initiateFlow(issuer);
             subFlow(new IdentitySyncFlow.Send(session, ptx.getTx()));
+
             final SignedTransaction stx = subFlow(new CollectSignaturesFlow(
                     ptx,
                     ImmutableSet.of(session),
@@ -144,7 +151,7 @@ public class TokenSettlement {
                     COLLECTING.childProgressTracker()));
 
             // We get the transaction notarised and recorded automatically by the platform.
-            progressTracker.setCurrentStep(FINALISING);
+            getProgressTracker().setCurrentStep(FINALISING);
             return subFlow(new FinalityFlow(stx, FINALISING.childProgressTracker()));
         }
     }
@@ -161,8 +168,8 @@ public class TokenSettlement {
         @Override
         public SignedTransaction call() throws FlowException {
             subFlow(new IdentitySyncFlow.Receive(otherFlow));
-            SignedTransaction stx = subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
-            return waitForLedgerCommit(stx.getId());
+            return subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
+            //return waitForLedgerCommit(stx.getId());
         }
     }
 

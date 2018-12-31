@@ -27,8 +27,7 @@ public class ContractTests {
     public void setup() {
         ledgerServices = new MockServices(
                 ImmutableList.of("ch.insurance.cordapp"),
-                new TestIdentity(new CordaX500Name("TestId", "", "GB"))
-
+                alice.getName()
         );
     }
 

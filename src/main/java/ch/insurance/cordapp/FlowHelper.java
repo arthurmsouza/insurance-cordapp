@@ -1,5 +1,6 @@
 package ch.insurance.cordapp;
 
+import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
@@ -20,6 +21,7 @@ public class FlowHelper<T extends ContractState> {
         this.serviceHub = serviceHub;
     }
 
+    @Suspendable
     public StateAndRef<T> getLastStateByLinearId(Class<T> stateClass, UniqueIdentifier linearId) {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
                 null,

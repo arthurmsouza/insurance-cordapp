@@ -43,7 +43,7 @@ public class BaseTests {
         network.runNetwork();
         ledgerServices = new MockServices(
                 ImmutableList.of("ch.insurance.cordapp.token"),
-                ledgerTestID
+                ledgerTestID.getName()
         );
     }
 

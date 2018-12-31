@@ -6,6 +6,7 @@ import ch.insurance.cordapp.token.TokenState;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import kotlin.Unit;
 import net.corda.confidential.IdentitySyncFlow;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -13,6 +14,7 @@ import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
+import net.corda.core.utilities.ProgressTracker;
 
 import java.security.PublicKey;
 import java.util.HashSet;
@@ -33,12 +35,15 @@ public class TokenTransfer {
             this.newOwner = newOwner;
             this.id = id;
         }
-
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return this.progressTracker_full;
+        }
 
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            progressTracker.setCurrentStep(PREPARATION);
+            getProgressTracker().setCurrentStep(PREPARATION);
 
             // We choose our transaction's notary (the notary prevents double-spends).
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
@@ -50,7 +55,7 @@ public class TokenTransfer {
              *                - create new TokenState based on Input, update owner and set same amount
              * ===========================================================================*/
             // We create our new TokenState.
-            StateAndRef<TokenState> tokenInputStateToTransfer =  this.getStateByLinearId(
+            StateAndRef<TokenState> tokenInputStateToTransfer =  this.getLastStateByLinearId(
                     TokenState.class, this.id);
             TokenState tokenInputState = this.getStateByRef(tokenInputStateToTransfer);
             final Party oldIssuer = tokenInputState.getIssuer();
@@ -60,7 +65,7 @@ public class TokenTransfer {
             if (!getOurIdentity().equals(tokenInputState.getOwner())) {
                 throw new IllegalStateException("Token transfer can only be initiated by the current owner.");
             }
-            progressTracker.setCurrentStep(BUILDING);
+            getProgressTracker().setCurrentStep(BUILDING);
             // Stage 4. Create the new obligation state reflecting a new lender.
             // We create our new TokenState.
             TokenState tokenOutputState = tokenInputState.withNewOwner(this.newOwner);
@@ -90,16 +95,17 @@ public class TokenTransfer {
              * ===========================================================================*/
             // Stage 6. Verify and sign the transaction.
             // We check our transaction is valid based on its contracts.
-            progressTracker.setCurrentStep(SIGNING);
+            getProgressTracker().setCurrentStep(VERIFYING);
             transactionBuilder.verify(getServiceHub());
 
             // We sign the transaction with our private key, making it immutable.
             // signer must be the old owner
+            getProgressTracker().setCurrentStep(SIGNING);
             SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(
                     transactionBuilder, oldOwner.getOwningKey());
 
             // Stage 7. Get a Party object for the old issuer.
-            progressTracker.setCurrentStep(SYNCING);
+            getProgressTracker().setCurrentStep(SYNCING);
 
             // Stage 8. Send any keys and certificates so the signers can verify each other's identity.
             // We call `toSet` in case the old issuer and the new owner are the same party.
@@ -111,7 +117,7 @@ public class TokenTransfer {
             subFlow(new IdentitySyncFlow.Send(sessions, signedTransaction.getTx(), SYNCING.childProgressTracker()));
 
             // Stage 9. Collect signatures from the issuer and the new owner.
-            progressTracker.setCurrentStep(COLLECTING);
+            getProgressTracker().setCurrentStep(COLLECTING);
             final SignedTransaction stx = subFlow(new CollectSignaturesFlow(
                     signedTransaction,
                     sessions,
@@ -120,8 +126,8 @@ public class TokenTransfer {
 
             // We get the transaction notarised and recorded automatically by the platform.
             // send a copy to current issuer
-            progressTracker.setCurrentStep(FINALISING);
-            return subFlow(new FinalityFlow(stx, ImmutableSet.of(issuer)));
+            getProgressTracker().setCurrentStep(FINALISING);
+            return subFlow(new FinalityFlow(stx));
         }
     }
 
@@ -136,9 +142,9 @@ public class TokenTransfer {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            subFlow(new IdentitySyncFlow.Receive(otherFlow));
-            SignedTransaction stx = subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
-            return waitForLedgerCommit(stx.getId());
+            Unit none = subFlow(new IdentitySyncFlow.Receive(otherFlow));
+            return subFlow(new BaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
+            //return waitForLedgerCommit(stx.getId());
         }
     }
 

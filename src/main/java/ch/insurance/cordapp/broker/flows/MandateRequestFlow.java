@@ -10,6 +10,7 @@ import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
+import net.corda.core.utilities.ProgressTracker;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,10 +32,16 @@ public class MandateRequestFlow {
             this.allowedBusiness = allowedBusiness;
         }
 
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return this.progressTracker_nosync_nocollect;
+        }
+
+
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-            progressTracker.setCurrentStep(PREPARATION);
+            getProgressTracker().setCurrentStep(PREPARATION);
             // We get a reference to our own identity.
             Party issuer = getOurIdentity();
 
@@ -49,7 +56,7 @@ public class MandateRequestFlow {
              *      TODO 3 - Build our issuance transaction to update the ledger!
              * ===========================================================================*/
             // We build our transaction.
-            progressTracker.setCurrentStep(BUILDING);
+            getProgressTracker().setCurrentStep(BUILDING);
             TransactionBuilder transactionBuilder = getMyTransactionBuilderSignedByMe(new MandateContract.Commands.Request());
             transactionBuilder.addOutputState(mandate, MandateContract.ID);
 
@@ -57,7 +64,7 @@ public class MandateRequestFlow {
              *          TODO 2 - Write our contract to control issuance!
              * ===========================================================================*/
             // We check our transaction is valid based on its contracts.
-            return synchronizeAndFinalize(transactionBuilder);
+            return signAndFinalize(transactionBuilder);
         }
 
     }
